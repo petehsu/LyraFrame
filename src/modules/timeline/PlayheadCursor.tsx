@@ -25,7 +25,7 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     // Calculate position
     const position = (currentTime / 1000) * pixelsPerSecond + sidebarWidth;
 
-    // Drag Handler - 使用绝对坐标计算
+    // Drag Handler - 精确计算考虑滚动和sidebar
     const handlePointerDown = (e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -36,13 +36,22 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
         const handleMove = (ev: PointerEvent) => {
             if (!containerRef.current) return;
 
+            // 每次移动都重新获取最新值
             const containerRect = containerRef.current.getBoundingClientRect();
-            // 🔧 修复：每次移动时实时读取scrollLeft，而非使用闭包中的旧值
             const scrollLeft = containerRef.current.scrollLeft;
 
-            // Calculate relative X position in timeline content
-            const relativeX = ev.clientX - containerRect.left + scrollLeft - sidebarWidth;
-            const newTime = (relativeX / pixelsPerSecond) * 1000;
+            // 鼠标相对于容器可视区的位置（从容器左边缘开始）
+            const mouseXInViewport = ev.clientX - containerRect.left;
+
+            // 减去sidebar宽度（sidebar是sticky的，不滚动）
+            // 得到鼠标在可滚动内容区的可视位置
+            const mouseXInContent = mouseXInViewport - sidebarWidth;
+
+            // 加上滚动偏移量，得到鼠标在时间轴内容的绝对位置
+            const absoluteX = mouseXInContent + scrollLeft;
+
+            // 转换为时间
+            const newTime = (absoluteX / pixelsPerSecond) * 1000;
 
             // Clamp to valid range
             setPlayhead(Math.max(0, Math.min(newTime, duration)));
