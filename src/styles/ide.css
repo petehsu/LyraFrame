@@ -508,10 +508,9 @@ body,
    ======================================== */
 .playhead-cursor {
     position: sticky;
-    left: var(--playhead-position, 128px);
     top: 0;
-    bottom: 0;
     height: 100%;
+    width: 0;
     z-index: 100;
     pointer-events: none;
 }

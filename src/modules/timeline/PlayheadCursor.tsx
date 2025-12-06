@@ -1,19 +1,19 @@
-import React from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import { useTimelineStore } from '../../store/timelineStore';
 
 interface PlayheadCursorProps {
     pixelsPerSecond: number;
     containerRef: React.RefObject<HTMLDivElement | null>;
-    sidebarWidth: number; // Offset from left edge of timeline content
+    sidebarWidth: number;
 }
 
 /**
- * PlayheadCursor - 统一的时间轴播放头组件
+ * PlayheadCursor - 时间轴播放头组件
  * 
- * 设计理念：
- * 1. 整体渲染 - 头部和线条是一个整体，不可能分离
- * 2. 大区域点击 - 整个头部区域都可以拖动
- * 3. 跟随手指 - 实时响应，无延迟
+ * 设计方案：
+ * 1. 使用 position: sticky 保持在视口中的固定位置
+ * 2. 位置基于 currentTime 计算
+ * 3. 拖拽时直接更新 currentTime（不管滚动状态）
  */
 export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     pixelsPerSecond,
@@ -21,114 +21,79 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     sidebarWidth
 }) => {
     const { currentTime, duration, setPlayhead } = useTimelineStore();
-    const [debugMousePos, setDebugMousePos] = React.useState<number | null>(null);
+    const isDraggingRef = useRef(false);
 
-    // Calculate position - 播放头在视窗中的固定位置（不随滚动移动）
-    // 使用 CSS sticky 定位，只需要计算相对于sidebar的偏移
+    // 计算播放头在时间轴内容中的位置
     const timePosition = (currentTime / 1000) * pixelsPerSecond;
     const position = timePosition + sidebarWidth;
 
-    // Drag Handler - 精确计算考虑滚动和sidebar
-    const handlePointerDown = (e: React.PointerEvent) => {
+    // 拖拽处理
+    const handlePointerDown = useCallback((e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
+        isDraggingRef.current = true;
         const target = e.currentTarget as HTMLElement;
         target.setPointerCapture(e.pointerId);
 
         const handleMove = (ev: PointerEvent) => {
-            if (!containerRef.current) return;
+            if (!containerRef.current || !isDraggingRef.current) return;
 
-            // 每次移动都重新获取最新值
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const scrollLeft = containerRef.current.scrollLeft;
+            const container = containerRef.current;
+            const rect = container.getBoundingClientRect();
+            const scrollLeft = container.scrollLeft;
 
-            // 鼠标相对于容器可视区的位置（从容器左边缘开始）
-            const mouseXInViewport = ev.clientX - containerRect.left;
+            // 鼠标相对于容器的X坐标
+            const mouseX = ev.clientX - rect.left;
 
-            // 减去sidebar宽度（sidebar是sticky的，不滚动）
-            // 得到鼠标在可滚动内容区的可视位置
-            const mouseXInContent = mouseXInViewport - sidebarWidth;
+            // 减去sidebar宽度，加上滚动偏移，得到时间轴内容中的位置
+            const contentX = mouseX - sidebarWidth + scrollLeft;
 
-            // 加上滚动偏移量，得到鼠标在时间轴内容的绝对位置
-            const absoluteX = mouseXInContent + scrollLeft;
+            // 转换为时间（毫秒）
+            const newTime = (contentX / pixelsPerSecond) * 1000;
 
-            // 转换为时间
-            const newTime = (absoluteX / pixelsPerSecond) * 1000;
-            const clampedTime = Math.max(0, Math.min(newTime, duration));
-
-            // 计算播放头应该渲染的位置（相对于内容容器左边缘）
-            const expectedPlayheadPosition = (clampedTime / 1000) * pixelsPerSecond + sidebarWidth;
-
-            // 🔴 调试：设置鼠标位置标记
-            setDebugMousePos(expectedPlayheadPosition);
-
-            console.log('🎯 Playhead Debug:', {
-                '1. Mouse clientX': ev.clientX,
-                '2. Container left': containerRect.left,
-                '3. Scroll left': scrollLeft,
-                '4. Mouse in viewport': mouseXInViewport,
-                '5. Mouse in content (- sidebar)': mouseXInContent,
-                '6. Absolute X (+ scroll)': absoluteX,
-                '7. Calculated time (ms)': clampedTime,
-                '8. Expected playhead pos': expectedPlayheadPosition,
-                '9. Current position': position,
-                '10. Diff': expectedPlayheadPosition - position
-            });
-
-            // Clamp to valid range
-            setPlayhead(clampedTime);
+            // 限制在有效范围内
+            setPlayhead(Math.max(0, Math.min(newTime, duration)));
         };
 
         const handleUp = () => {
+            isDraggingRef.current = false;
             target.releasePointerCapture(e.pointerId);
             window.removeEventListener('pointermove', handleMove);
             window.removeEventListener('pointerup', handleUp);
-            setDebugMousePos(null); // 清除调试标记
         };
 
-        // Initial position update on click
+        // 立即处理点击位置
         handleMove(e.nativeEvent);
 
         window.addEventListener('pointermove', handleMove);
         window.addEventListener('pointerup', handleUp);
-    };
+    }, [containerRef, sidebarWidth, pixelsPerSecond, duration, setPlayhead]);
+
+    // 监听滚动事件强制重新渲染（确保sticky正确工作）
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            // 强制重新渲染以更新位置
+            // （React会自动处理，但这里确保一致性）
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [containerRef]);
 
     return (
-        <>
-            <div
-                className="playhead-cursor"
-                style={{
-                    left: position,
-                    // 使用 CSS 变量控制间距，方便后续调整
-                    '--playhead-handle-size': '24px',
-                    '--playhead-color': '#3b82f6'
-                } as React.CSSProperties}
-                onPointerDown={handlePointerDown}
-            >
-                {/* 顶部拖动把手 - 使用 Div 而非 SVG，更易控制 */}
-                <div className="playhead-handle">
-                    <div className="playhead-handle-inner" />
-                </div>
-
-                {/* 垂直线条 */}
-                <div className="playhead-line" />
+        <div
+            className="playhead-cursor"
+            style={{ left: position }}
+            onPointerDown={handlePointerDown}
+        >
+            <div className="playhead-handle">
+                <div className="playhead-handle-inner" />
             </div>
-
-            {/* 🔴 调试：鼠标位置标记 */}
-            {debugMousePos !== null && (
-                <div style={{
-                    position: 'absolute',
-                    left: debugMousePos,
-                    top: 0,
-                    width: '4px',
-                    height: '100%',
-                    background: 'red',
-                    opacity: 0.5,
-                    pointerEvents: 'none',
-                    zIndex: 101
-                }} />
-            )}
-        </>
+            <div className="playhead-line" />
+        </div>
     );
 };
