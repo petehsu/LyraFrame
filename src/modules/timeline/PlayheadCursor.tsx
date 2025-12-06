@@ -23,6 +23,8 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     const { currentTime, duration, setPlayhead } = useTimelineStore();
 
     // Calculate position
+    // PlayheadCursor is inside the content container (which includes sidebar width)
+    // So position is relative to content container's left edge, which already accounts for sidebar
     const position = (currentTime / 1000) * pixelsPerSecond + sidebarWidth;
 
     // Drag Handler - 精确计算考虑滚动和sidebar
@@ -52,9 +54,25 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
 
             // 转换为时间
             const newTime = (absoluteX / pixelsPerSecond) * 1000;
+            const clampedTime = Math.max(0, Math.min(newTime, duration));
+
+            // 计算播放头应该渲染的位置
+            const expectedPlayheadPosition = (clampedTime / 1000) * pixelsPerSecond + sidebarWidth;
+
+            console.log('🎯 Playhead Debug:', {
+                '1. Mouse clientX': ev.clientX,
+                '2. Container left': containerRect.left,
+                '3. Scroll left': scrollLeft,
+                '4. Mouse in viewport': mouseXInViewport,
+                '5. Mouse in content (- sidebar)': mouseXInContent,
+                '6. Absolute X (+ scroll)': absoluteX,
+                '7. Calculated time (ms)': clampedTime,
+                '8. Expected playhead pos': expectedPlayheadPosition,
+                '9. Diff from mouse': expectedPlayheadPosition - mouseXInViewport - scrollLeft
+            });
 
             // Clamp to valid range
-            setPlayhead(Math.max(0, Math.min(newTime, duration)));
+            setPlayhead(clampedTime);
         };
 
         const handleUp = () => {
