@@ -2,7 +2,7 @@
 .loading-screen {
     position: fixed;
     inset: 0;
-    display: 'flex';
+    display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
@@ -13,39 +13,61 @@
     visibility: hidden;
 }
 
-/* 快速眨眼动画 - 1秒完成1次眨眼 */
+/* 快速眨眼动画 - 2秒内眨2次（每次0.3秒，间隔0.7秒） */
 @keyframes quickBlink {
 
-    0%,
-    100% {
+    /* 第一次眨眼 (0-15%) */
+    0% {
         transform: scaleY(1);
         opacity: 1;
     }
 
-    /* 快速闭眼 */
-    40% {
-        transform: scaleY(1);
-    }
-
-    45% {
+    5% {
         transform: scaleY(0.1);
         opacity: 0.9;
     }
 
-    /* 完全闭眼 */
-    50% {
+    7.5% {
         transform: scaleY(0.02);
         opacity: 0.7;
     }
 
-    /* 快速睁眼 */
+    10% {
+        transform: scaleY(0.1);
+        opacity: 0.9;
+    }
+
+    15% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+
+    /* 间隔 (15-50%) */
+    50% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+
+    /* 第二次眨眼 (50-65%) */
     55% {
         transform: scaleY(0.1);
         opacity: 0.9;
     }
 
+    57.5% {
+        transform: scaleY(0.02);
+        opacity: 0.7;
+    }
+
     60% {
+        transform: scaleY(0.1);
+        opacity: 0.9;
+    }
+
+    65%,
+    100% {
         transform: scaleY(1);
+        opacity: 1;
     }
 }
 

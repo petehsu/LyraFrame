@@ -151,12 +151,12 @@ function App() {
     </div>
   );
 
-  // 显示加载屏幕
+  // 加载中时显示LoadingScreen
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // 显示主应用
+  // 加载完成后显示主应用
   return renderApp();
 }
 
