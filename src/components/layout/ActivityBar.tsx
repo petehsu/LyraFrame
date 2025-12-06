@@ -1,5 +1,6 @@
 import { Files, Search, GitGraph, Box } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Logo } from '../Logo';
 
 interface ActivityBarProps {
     activeTab: string;
@@ -10,6 +11,11 @@ export const ActivityBar = ({ activeTab, onTabChange }: ActivityBarProps) => {
     const { t } = useTranslation();
     return (
         <div className="activity-bar">
+            {/* Logo/Brand */}
+            <div className="p-2 mb-2">
+                <Logo style={{ color: 'var(--logo-color)' }} />
+            </div>
+
             <div
                 className={`ab-icon ${activeTab === 'files' ? 'active' : ''}`}
                 onClick={() => onTabChange('files')}
