@@ -62,17 +62,17 @@ export const TimelineContainer = () => {
                             </div>
                         ))}
                     </div>
-
-                    {/* ========================================
-                       PlayheadCursor - 统一的播放指针
-                       放在最外层，贯穿整个时间轴高度
-                       ======================================== */}
-                    <PlayheadCursor
-                        pixelsPerSecond={PIXELS_PER_SECOND}
-                        containerRef={scrollContainerRef}
-                        sidebarWidth={TRACK_HEADER_WIDTH}
-                    />
                 </div>
+
+                {/* ========================================
+                   PlayheadCursor - 固定在滚动容器中
+                   现在在滚动容器的直接子元素，不会随内容滚动
+                   ======================================== */}
+                <PlayheadCursor
+                    pixelsPerSecond={PIXELS_PER_SECOND}
+                    containerRef={scrollContainerRef}
+                    sidebarWidth={TRACK_HEADER_WIDTH}
+                />
             </div>
         </div>
     );
