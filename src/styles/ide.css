@@ -507,12 +507,13 @@ body,
    Playhead Cursor
    ======================================== */
 .playhead-cursor {
-    position: absolute;
+    position: sticky;
+    left: var(--playhead-position, 128px);
     top: 0;
     bottom: 0;
+    height: 100%;
     z-index: 100;
     pointer-events: none;
-    /* Removed translateX(-50%) - position is now at the exact cursor location */
 }
 
 .playhead-handle {

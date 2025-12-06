@@ -23,12 +23,10 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     const { currentTime, duration, setPlayhead } = useTimelineStore();
     const [debugMousePos, setDebugMousePos] = React.useState<number | null>(null);
 
-    // Calculate position - 播放头在视窗中的位置（不随滚动移动）
-    // 播放头现在是滚动容器的直接子元素，position: absolute 相对于滚动容器
-    // 所以我们需要计算它在视窗中应该显示的位置（包含sidebar偏移）
-    const scrollLeft = containerRef.current?.scrollLeft || 0;
-    const timelinePositionInContent = (currentTime / 1000) * pixelsPerSecond; // 在时间轴内容中的绝对位置
-    const position = timelinePositionInContent - scrollLeft + sidebarWidth; // 在视窗中的可见位置
+    // Calculate position - 播放头在视窗中的固定位置（不随滚动移动）
+    // 使用 CSS sticky 定位，只需要计算相对于sidebar的偏移
+    const timePosition = (currentTime / 1000) * pixelsPerSecond;
+    const position = timePosition + sidebarWidth;
 
     // Drag Handler - 精确计算考虑滚动和sidebar
     const handlePointerDown = (e: React.PointerEvent) => {
