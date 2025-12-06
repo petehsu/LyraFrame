@@ -1,0 +1,20 @@
+{
+    "app": {
+        "title": "LyraFrame",
+        "activityBar": {
+            "explorer": "Explorer",
+            "search": "Search",
+            "git": "Source Control",
+            "extensions": "Extensions"
+        },
+        "panels": {
+            "assets": "Assets",
+            "properties": "Properties",
+            "timeline": "Timeline",
+            "ai": "Lyra AI"
+        }
+    },
+    "editor": {
+        "placeholder": "// Select a clip to edit code"
+    }
+}

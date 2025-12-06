@@ -1,0 +1,438 @@
+/* ============================================
+   LyraFrame - Refined Design System
+   ============================================
+   设计理念：
+   - 温暖的中性色调，拒绝AI典型蓝紫
+   - 组件间有明显间隙（gap-based layout）
+   - 圆角统一，同心圆感
+   - 支持浅色/深色模式 (自动检测 + 手动切换)
+   ============================================ */
+
+/* ========================================
+   Color Palette - Warm Neutral + Coral Accent
+   ======================================== */
+
+:root {
+  /* Gap System - 组件间距 */
+  --gap-panel: 6px;
+  --gap-section: 8px;
+
+  /* Radius System - 更大的圆角 */
+  --radius-panel: 16px;
+  /* 外层面板 */
+  --radius-inner: 10px;
+  /* 内层元素 */
+  --radius-button: 8px;
+  /* 按钮等小元素 */
+
+  /* Typography */
+  --font-sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Transition */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+}
+
+/* ========================================
+   Dark Mode (Default)
+   ======================================== */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds - Warm Charcoal, NOT blue */
+  --color-base: #121214;
+  --color-surface: #1c1c1f;
+  --color-elevated: #27272a;
+  --color-hover: #3f3f46;
+
+  /* Text */
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-text-disabled: #52525b;
+
+  /* Border */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Accent - Warm Coral/Rose */
+  --color-accent: #f472b6;
+  --color-accent-hover: #f9a8d4;
+  --color-accent-muted: rgba(244, 114, 182, 0.15);
+
+  /* Secondary Accent - Soft Mint */
+  --color-secondary: #34d399;
+
+  /* Semantic */
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  /* Logo color for dark mode */
+  --logo-color: #ffffff;
+}
+
+/* ========================================
+   Light Mode - Manual Override
+   ======================================== */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-base: #f4f4f5;
+  --color-surface: #ffffff;
+  --color-elevated: #fafafa;
+  --color-hover: #e4e4e7;
+
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #71717a;
+  --color-text-disabled: #a1a1aa;
+
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-border-strong: rgba(0, 0, 0, 0.1);
+
+  --color-accent: #ec4899;
+  --color-accent-hover: #f472b6;
+  --color-accent-muted: rgba(236, 72, 153, 0.1);
+
+  --color-secondary: #10b981;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* Logo color for light mode */
+  --logo-color: #000000;
+}
+
+/* ========================================
+   Auto-detect System Preference
+   ======================================== */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --color-base: #f4f4f5;
+    --color-surface: #ffffff;
+    --color-elevated: #fafafa;
+    --color-hover: #e4e4e7;
+
+    --color-text-primary: #18181b;
+    --color-text-secondary: #52525b;
+    --color-text-muted: #71717a;
+    --color-text-disabled: #a1a1aa;
+
+    --color-border: rgba(0, 0, 0, 0.06);
+    --color-border-strong: rgba(0, 0, 0, 0.1);
+
+    --color-accent: #ec4899;
+    --color-accent-hover: #f472b6;
+    --color-accent-muted: rgba(236, 72, 153, 0.1);
+
+    --color-secondary: #10b981;
+
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+    --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    --logo-color: #000000;
+  }
+}
+
+/* ========================================
+   Legacy Compatibility (Map to new tokens)
+   ======================================== */
+:root {
+  --vscode-bg-base: var(--color-base);
+  --vscode-bg-sidebar: var(--color-surface);
+  --vscode-bg-activitybar: var(--color-surface);
+  --vscode-bg-panel: var(--color-surface);
+  --vscode-bg-input: var(--color-elevated);
+  --vscode-bg-surface: var(--color-surface);
+  --vscode-border: var(--color-border);
+  --vscode-focus: var(--color-accent);
+  --vscode-fg-base: var(--color-text-primary);
+  --vscode-fg-muted: var(--color-text-secondary);
+  --vscode-fg-icon: var(--color-text-muted);
+  --vscode-fg-icon-active: var(--color-text-primary);
+
+  /* Allotment Splitter */
+  --sash-size: 4px;
+  --sash-hover: var(--color-accent);
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  background-color: var(--color-base);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   Panel - 独立圆角面板样式
+   ======================================== */
+.panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.panel-content {
+  padding: var(--space-3);
+}
+
+/* ========================================
+   Activity Bar
+   ======================================== */
+.activity-bar {
+  width: 52px;
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2) 0;
+  gap: var(--space-1);
+  border-radius: var(--radius-panel);
+}
+
+.ab-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-button);
+  transition: all var(--transition-fast);
+}
+
+.ab-icon:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-hover);
+}
+
+.ab-icon.active {
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+}
+
+/* ========================================
+   Sidebar
+   ======================================== */
+.ide-sidebar {
+  background: var(--color-surface);
+  border-radius: var(--radius-panel);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sidebar-title {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ========================================
+   Form Elements
+   ======================================== */
+.modern-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  transition: all var(--transition-fast);
+}
+
+.modern-input:hover {
+  border-color: var(--color-border-strong);
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+.modern-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-button);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.modern-button:hover {
+  background: var(--color-accent-hover);
+}
+
+.modern-button:active {
+  transform: scale(0.98);
+}
+
+.modern-button-secondary {
+  background: var(--color-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.modern-button-secondary:hover {
+  background: var(--color-hover);
+  border-color: var(--color-border-strong);
+}
+
+/* ========================================
+   Scrollbar
+   ======================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-disabled);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.bg-base {
+  background: var(--color-base);
+}
+
+.bg-surface {
+  background: var(--color-surface);
+}
+
+.bg-elevated {
+  background: var(--color-elevated);
+}
+
+.rounded-panel {
+  border-radius: var(--radius-panel);
+}
+
+.rounded-inner {
+  border-radius: var(--radius-inner);
+}
+
+.rounded-button {
+  border-radius: var(--radius-button);
+}
+
+/* Logo Color Utility */
+.logo-themed {
+  fill: var(--logo-color);
+}

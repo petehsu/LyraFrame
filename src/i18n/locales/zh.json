@@ -1,0 +1,20 @@
+{
+    "app": {
+        "title": "LyraFrame",
+        "activityBar": {
+            "explorer": "资源管理器",
+            "search": "搜索",
+            "git": "源代码管理",
+            "extensions": "扩展"
+        },
+        "panels": {
+            "assets": "资源库",
+            "properties": "属性",
+            "timeline": "时间轴",
+            "ai": "Lyra AI"
+        }
+    },
+    "editor": {
+        "placeholder": "// 选择一个片段以编辑代码"
+    }
+}
