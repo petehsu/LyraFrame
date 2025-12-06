@@ -6,6 +6,16 @@
   <link rel="icon" type="image/svg+xml" href="/src/assets/logo.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LyraFrame - AI-Powered Video Editor</title>
+
+  <!-- 主题预检测：避免背景色闪烁 -->
+  <script>
+    (function () {
+      const dataTheme = document.documentElement.getAttribute('data-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = dataTheme ? dataTheme === 'dark' : prefersDark;
+      document.documentElement.style.setProperty('--initial-bg', isDark ? '#000000' : '#ffffff');
+    })();
+  </script>
 </head>
 
 <body>

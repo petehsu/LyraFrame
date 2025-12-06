@@ -1,44 +1,59 @@
 import { useEffect, useState } from 'react';
 
 export const LoadingScreen = () => {
-    const [isDark, setIsDark] = useState(true);
+    // 立即从系统检测主题，避免闪烁
+    const getInitialTheme = () => {
+        const dataTheme = document.documentElement.getAttribute('data-theme');
+        if (dataTheme) {
+            return dataTheme === 'dark';
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    };
+
+    const [isDark] = useState(getInitialTheme);
+    const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        // 检测系统主题
-        const checkTheme = () => {
-            const root = document.documentElement;
-            const computedTheme = root.getAttribute('data-theme');
+        // 强制显示加载界面至少2秒（确保完成两次眨眼）
+        const minDisplayTime = 2000; // 2秒
+        const startTime = Date.now();
 
-            if (computedTheme) {
-                setIsDark(computedTheme === 'dark');
-            } else {
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                setIsDark(prefersDark);
-            }
+        const handleLoadComplete = () => {
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, minDisplayTime - elapsed);
+
+            setTimeout(() => {
+                // 开始淡出
+                setIsVisible(false);
+            }, remaining);
         };
 
-        checkTheme();
-
-        // 监听主题变化
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        mediaQuery.addEventListener('change', checkTheme);
-
-        return () => mediaQuery.removeEventListener('change', checkTheme);
+        // 等待页面加载完成
+        if (document.readyState === 'complete') {
+            handleLoadComplete();
+        } else {
+            window.addEventListener('load', handleLoadComplete);
+            return () => window.removeEventListener('load', handleLoadComplete);
+        }
     }, []);
 
     const fillColor = isDark ? '#ffffff' : '#000000';
+    const bgColor = isDark ? '#000000' : '#ffffff';
 
     return (
         <div
-            className="loading-screen"
+            className={`loading-screen ${!isVisible ? 'fade-out' : ''}`}
             style={{
                 position: 'fixed',
                 inset: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: isDark ? '#000000' : '#ffffff',
+                backgroundColor: bgColor,
                 zIndex: 9999,
+                opacity: isVisible ? 1 : 0,
+                visibility: isVisible ? 'visible' : 'hidden',
+                transition: 'opacity 0.8s ease-out, visibility 0.8s ease-out',
             }}
         >
             <svg width="200" height="200" viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg">
@@ -56,25 +71,25 @@ export const LoadingScreen = () => {
                     fill={fillColor}
                 />
 
-                {/* 右眼 - 眨眼动画 */}
+                {/* 右眼 - 快速眨眼动画（2次/秒） */}
                 <path
                     className="eye-right"
                     d="m343.82218,186.70234c-1.60677,-13.41675 -2.46566,-25.99859 1.30681,-38.31949c3.92617,-12.82275 13.67326,-20.46863 25.22973,-19.9443c12.83302,0.58231 21.00314,8.1966 24.45366,22.26784c2.48291,10.1253 2.42384,20.4228 1.21755,30.54415c-2.05733,17.26258 -11.18818,27.3231 -24.64648,28.6453c-12.87848,1.26518 -21.51279,-5.79476 -27.56127,-23.1935z"
                     fill={fillColor}
                     style={{
                         transformOrigin: '368px 167px',
-                        animation: 'blinkEye 2.5s ease-in-out infinite'
+                        animation: 'quickBlink 1s ease-in-out 2' // 1秒完成1次，共2次
                     }}
                 />
 
-                {/* 左眼 - 眨眼动画 */}
+                {/* 左眼 - 快速眨眼动画（2次/秒） */}
                 <path
                     className="eye-left"
                     d="m122.47558,159.42965c-1.60677,-13.41675 -2.46566,-25.9986 1.30681,-38.31949c3.92618,-12.82275 13.67327,-20.46864 25.22973,-19.94431c12.83302,0.58231 21.00315,8.19661 24.45366,22.26784c2.48291,10.1253 2.42385,20.42279 1.21756,30.54414c-2.05733,17.26258 -11.18818,27.3231 -24.64648,28.6453c-12.87848,1.26518 -21.51279,-5.79475 -27.56127,-23.19349z"
                     fill={fillColor}
                     style={{
                         transformOrigin: '147px 140px',
-                        animation: 'blinkEye 2.5s ease-in-out infinite'
+                        animation: 'quickBlink 1s ease-in-out 2' // 1秒完成1次，共2次
                     }}
                 />
             </svg>

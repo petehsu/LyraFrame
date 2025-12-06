@@ -2,16 +2,51 @@
 .loading-screen {
     position: fixed;
     inset: 0;
-    display: flex;
+    display: 'flex';
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
 }
 
 .loading-screen.fade-out {
     opacity: 0;
     visibility: hidden;
+}
+
+/* 快速眨眼动画 - 1秒完成1次眨眼 */
+@keyframes quickBlink {
+
+    0%,
+    100% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+
+    /* 快速闭眼 */
+    40% {
+        transform: scaleY(1);
+    }
+
+    45% {
+        transform: scaleY(0.1);
+        opacity: 0.9;
+    }
+
+    /* 完全闭眼 */
+    50% {
+        transform: scaleY(0.02);
+        opacity: 0.7;
+    }
+
+    /* 快速睁眼 */
+    55% {
+        transform: scaleY(0.1);
+        opacity: 0.9;
+    }
+
+    60% {
+        transform: scaleY(1);
+    }
 }
 
 /* 眨眼动画 - 只对眼睛部分做垂直缩放 */
