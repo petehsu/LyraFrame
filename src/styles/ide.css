@@ -507,10 +507,9 @@ body,
    Playhead Cursor
    ======================================== */
 .playhead-cursor {
-    position: sticky;
+    position: absolute;
     top: 0;
-    height: 100%;
-    width: 0;
+    bottom: 0;
     z-index: 100;
     pointer-events: none;
 }
