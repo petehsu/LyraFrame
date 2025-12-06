@@ -33,13 +33,19 @@ export const PreviewPlayer = () => {
         });
 
     return (
-        <div className="w-full h-full relative overflow-hidden bg-black/90">
+        <div
+            className="w-full h-full relative overflow-hidden"
+            style={{ backgroundColor: 'var(--color-base)' }}
+        >
             {activeClips.map(clip => (
                 <ElementRenderer key={clip.id} clip={clip} />
             ))}
 
             {/* Overlay info for Debug */}
-            <div className="absolute bottom-2 right-2 text-xs text-white/50 pointern-events-none">
+            <div
+                className="absolute bottom-2 right-2 text-xs pointer-events-none"
+                style={{ color: 'var(--color-text-muted)' }}
+            >
                 {Math.floor(currentTime / 1000)}s
             </div>
         </div>
