@@ -48,10 +48,14 @@ export const SandpackRenderer = ({ content, clipId }: SandpackRendererProps) => 
                 template="static"
                 files={files}
                 theme={isDark ? "dark" : "light"}
+                options={{
+                    bundlerURL: undefined, // Disable external bundler calls
+                }}
             >
                 <SandpackPreview
                     showOpenInCodeSandbox={false}
                     showRefreshButton={false}
+                    actionsChildren={undefined} // Hide action buttons
                     style={{
                         height: '100%',
                         width: '100%',
