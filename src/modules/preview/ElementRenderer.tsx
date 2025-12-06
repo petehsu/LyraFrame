@@ -1,5 +1,5 @@
 import type { Clip } from '../../store/types';
-import { SandpackRenderer } from './SandpackRenderer';
+import { LightRenderer } from './LightRenderer';
 
 interface ElementRendererProps {
     clip: Clip;
@@ -37,7 +37,8 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
             );
 
         case 'code':
-            // Use Sandpack for secure, sandboxed code rendering
+            // 🚀 使用高性能 LightExecutor
+            // 优势：60fps、无延迟、易于录制视频
             return (
                 <div style={{
                     position: 'absolute',
@@ -47,7 +48,7 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
                     justifyContent: 'center',
                     padding: 'var(--space-4)'
                 }}>
-                    <SandpackRenderer
+                    <LightRenderer
                         content={clip.content}
                         clipId={clip.id}
                     />
