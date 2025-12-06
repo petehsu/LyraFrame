@@ -37,6 +37,7 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
             if (!containerRef.current) return;
 
             const containerRect = containerRef.current.getBoundingClientRect();
+            // 🔧 修复：每次移动时实时读取scrollLeft，而非使用闭包中的旧值
             const scrollLeft = containerRef.current.scrollLeft;
 
             // Calculate relative X position in timeline content
