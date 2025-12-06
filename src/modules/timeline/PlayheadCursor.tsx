@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useTimelineStore } from '../../store/timelineStore';
 
 interface PlayheadCursorProps {
@@ -11,19 +11,20 @@ interface PlayheadCursorProps {
  * PlayheadCursor - 时间轴播放头组件
  * 
  * 设计方案：
- * 1. 使用 position: sticky 保持在视口中的固定位置
- * 2. 位置基于 currentTime 计算
- * 3. 拖拽时直接更新 currentTime（不管滚动状态）
+ * 1. 播放头在内容容器内，使用 position: absolute
+ * 2. 位置 = (currentTime / 1000) * pixelsPerSecond + sidebarWidth
+ * 3. 拖拽时，直接基于播放头自身的父容器计算位置
  */
 export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     pixelsPerSecond,
-    containerRef,
+    containerRef: _containerRef, // 保留接口兼容性，但不再使用
     sidebarWidth
 }) => {
     const { currentTime, duration, setPlayhead } = useTimelineStore();
     const isDraggingRef = useRef(false);
+    const playheadRef = useRef<HTMLDivElement>(null);
 
-    // 计算播放头在时间轴内容中的位置
+    // 计算播放头在内容容器中的绝对位置
     const timePosition = (currentTime / 1000) * pixelsPerSecond;
     const position = timePosition + sidebarWidth;
 
@@ -36,21 +37,24 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
         const target = e.currentTarget as HTMLElement;
         target.setPointerCapture(e.pointerId);
 
+        // 获取内容容器（播放头的父元素）
+        const contentContainer = playheadRef.current?.parentElement;
+        if (!contentContainer) return;
+
         const handleMove = (ev: PointerEvent) => {
-            if (!containerRef.current || !isDraggingRef.current) return;
+            if (!isDraggingRef.current || !contentContainer) return;
 
-            const container = containerRef.current;
-            const rect = container.getBoundingClientRect();
-            const scrollLeft = container.scrollLeft;
+            // 获取内容容器的边界（这是播放头定位的参考系）
+            const contentRect = contentContainer.getBoundingClientRect();
 
-            // 鼠标相对于容器的X坐标
-            const mouseX = ev.clientX - rect.left;
+            // 鼠标相对于内容容器的X坐标
+            const mouseXInContent = ev.clientX - contentRect.left;
 
-            // 减去sidebar宽度，加上滚动偏移，得到时间轴内容中的位置
-            const contentX = mouseX - sidebarWidth + scrollLeft;
+            // 减去sidebar宽度，得到在时间轴区域的位置
+            const timelineX = mouseXInContent - sidebarWidth;
 
             // 转换为时间（毫秒）
-            const newTime = (contentX / pixelsPerSecond) * 1000;
+            const newTime = (timelineX / pixelsPerSecond) * 1000;
 
             // 限制在有效范围内
             setPlayhead(Math.max(0, Math.min(newTime, duration)));
@@ -68,24 +72,11 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
 
         window.addEventListener('pointermove', handleMove);
         window.addEventListener('pointerup', handleUp);
-    }, [containerRef, sidebarWidth, pixelsPerSecond, duration, setPlayhead]);
-
-    // 监听滚动事件强制重新渲染（确保sticky正确工作）
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const handleScroll = () => {
-            // 强制重新渲染以更新位置
-            // （React会自动处理，但这里确保一致性）
-        };
-
-        container.addEventListener('scroll', handleScroll, { passive: true });
-        return () => container.removeEventListener('scroll', handleScroll);
-    }, [containerRef]);
+    }, [sidebarWidth, pixelsPerSecond, duration, setPlayhead]);
 
     return (
         <div
+            ref={playheadRef}
             className="playhead-cursor"
             style={{ left: position }}
             onPointerDown={handlePointerDown}
