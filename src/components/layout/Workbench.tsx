@@ -12,7 +12,7 @@ interface WorkbenchProps {
 
 export const Workbench = ({ activityBar, sidebar, mainArea, rightPanel }: WorkbenchProps) => {
     return (
-        <div className="ide-workbench">
+        <div className="ide-workbench workbench">
             {/* Activity Bar (Fixed Width) */}
             <div style={{ flexShrink: 0, zIndex: 50 }}>
                 {activityBar}

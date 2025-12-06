@@ -24,26 +24,56 @@ function App() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    // 模拟加载过程，最少显示1秒
-    const minLoadTime = 1000;
+    // 等待应用完全就绪的策略
+    const minLoadTime = 2000; // 最少2秒（确保看到眨眼动画）
     const startTime = Date.now();
 
-    const handleLoad = () => {
+    let readyTimeout: number;
+
+    const checkAppReady = () => {
+      // 检查关键元素是否都已渲染
+      const rootElement = document.getElementById('root');
+      const hasRoot = rootElement && rootElement.children.length > 0;
+      const hasWorkbench = document.querySelector('.workbench') !== null;
+      const hasActivityBar = document.querySelector('.activity-bar') !== null;
+
+      return hasRoot && hasWorkbench && hasActivityBar;
+    };
+
+    const tryFinishLoading = () => {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, minLoadTime - elapsed);
 
-      setTimeout(() => {
-        setIsLoading(false);
-      }, remaining);
+      // 检查应用是否真的就绪
+      if (checkAppReady()) {
+        // 等待最小时间后再隐藏
+        setTimeout(() => {
+          // 再等一小段时间确保渲染稳定
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 300); // 额外300ms确保稳定
+        }, remaining);
+      } else {
+        // 如果还没就绪，继续等待
+        readyTimeout = window.setTimeout(tryFinishLoading, 100);
+      }
     };
 
-    // 如果页面已经加载完成
+    // 开始检查
     if (document.readyState === 'complete') {
-      handleLoad();
+      // 页面已加载，等待React渲染完成
+      readyTimeout = window.setTimeout(tryFinishLoading, 100);
     } else {
-      window.addEventListener('load', handleLoad);
-      return () => window.removeEventListener('load', handleLoad);
+      window.addEventListener('load', () => {
+        readyTimeout = window.setTimeout(tryFinishLoading, 100);
+      });
     }
+
+    return () => {
+      if (readyTimeout) {
+        clearTimeout(readyTimeout);
+      }
+    };
   }, []);
 
   // Sidebar Content Logic
