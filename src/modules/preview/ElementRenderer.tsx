@@ -1,4 +1,5 @@
 import type { Clip } from '../../store/types';
+import { SandpackRenderer } from './SandpackRenderer';
 
 interface ElementRendererProps {
     clip: Clip;
@@ -9,14 +10,19 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
         position: 'absolute',
         left: '50%',
         top: '50%',
-        transform: 'translate(-50%, -50%)', // Center by default
-        ...clip.properties.style // Allow override
+        transform: 'translate(-50%, -50%)',
+        ...clip.properties.style
     };
 
     switch (clip.type) {
         case 'text':
             return (
-                <div style={{ ...commonStyle, color: 'white', fontSize: '2em', fontFamily: 'Inter, sans-serif' }}>
+                <div style={{
+                    ...commonStyle,
+                    color: 'var(--color-text-primary)',
+                    fontSize: '2em',
+                    fontFamily: 'var(--font-sans)'
+                }}>
                     {clip.content}
                 </div>
             );
@@ -31,13 +37,20 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
             );
 
         case 'code':
-            // The core feature: Render raw HTML/CSS from the string
-            // For MVP we wrap in a relative container
+            // Use Sandpack for secure, sandboxed code rendering
             return (
-                <div
-                    style={{ ...commonStyle, width: '100%', height: '100%' }}
-                >
-                    <div dangerouslySetInnerHTML={{ __html: clip.content }} style={{ width: '100%', height: '100%' }} />
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 'var(--space-4)'
+                }}>
+                    <SandpackRenderer
+                        content={clip.content}
+                        clipId={clip.id}
+                    />
                 </div>
             );
 
