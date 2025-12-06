@@ -14,44 +14,45 @@
     visibility: hidden;
 }
 
-.logo-container {
-    position: relative;
-    width: 200px;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.loading-logo {
-    width: 100%;
-    height: 100%;
-    animation: blinkEyes 2s ease-in-out infinite;
-}
-
-/* 眨眼动画 - 模拟眼睛缩放效果 */
-@keyframes blinkEyes {
+/* 眨眼动画 - 只对眼睛部分做垂直缩放 */
+@keyframes blinkEye {
 
     0%,
     100% {
-        transform: scale(1);
+        transform: scaleY(1);
         opacity: 1;
     }
 
-    /* 眨眼时刻 */
-    48%,
-    52% {
-        transform: scaleY(0.1) scaleX(1);
+    /* 开始眯眼 */
+    46% {
+        transform: scaleY(1);
+    }
+
+    /* 快速闭眼 */
+    48% {
+        transform: scaleY(0.1);
+        opacity: 0.9;
+    }
+
+    /* 完全闭眼 */
+    50% {
+        transform: scaleY(0.05);
         opacity: 0.8;
     }
 
-    50% {
-        transform: scaleY(0.05) scaleX(1);
-        opacity: 0.7;
+    /* 快速睁眼 */
+    52% {
+        transform: scaleY(0.1);
+        opacity: 0.9;
+    }
+
+    /* 回到正常 */
+    54% {
+        transform: scaleY(1);
     }
 }
 
-/* 可选：呼吸效果 */
+/* 可选：整体Logo轻微呼吸效果 */
 @keyframes breathe {
 
     0%,
@@ -60,19 +61,6 @@
     }
 
     50% {
-        transform: scale(1.05);
-    }
-}
-
-/* 可选：柔和的脉冲效果 */
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.7;
+        transform: scale(1.02);
     }
 }
