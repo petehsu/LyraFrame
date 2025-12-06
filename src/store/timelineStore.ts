@@ -60,22 +60,19 @@ const INITIAL_STATE: ProjectState = {
                     start: 5000,
                     duration: 5000,
                     content: `// Canvas动画示例
-ctx.fillStyle = '#f472b6';
-ctx.font = '72px Inter';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText('Code Video', canvas.width/2, canvas.height/2);
-
 // 渐变背景
 const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-gradient.addColorStop(0, '#FF0099');
-gradient.addColorStop(1, '#493240');
+gradient.addColorStop(0, "#FF0099");
+gradient.addColorStop(1, "#493240");
 ctx.fillStyle = gradient;
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// 重新绘制文字
-ctx.fillStyle = '#ffffff';
-ctx.fillText('Code Video', canvas.width/2, canvas.height/2);`,
+// 绘制文字
+ctx.fillStyle = "#ffffff";
+ctx.font = "72px Inter";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillText("Code Video", canvas.width/2, canvas.height/2);`,
                     properties: {}
                 }
             ]
