@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="src/assets/logo.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="src/assets/logo-white.svg">
     <source media="(prefers-color-scheme: light)" srcset="src/assets/logo.svg">
     <img alt="LyraFrame Logo" src="src/assets/logo.svg" width="120" height="120">
   </picture>
