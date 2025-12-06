@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 import { useTimelineStore } from '../../store/timelineStore';
 
 export const PropertyPanel = () => {
-    const { tracks, updateClip } = useTimelineStore();
+    const { tracks, updateClip, selectedClipId } = useTimelineStore();
 
-    // Mock Selection: First clip of track 1
+    // 根据 selectedClipId 找到选中的 Clip
     const selectedClip = useMemo(() => {
-        const track = tracks.find(t => t.id === 'track-1');
-        return track?.clips[0] || null;
-    }, [tracks]);
+        if (!selectedClipId) return null;
+        return tracks.flatMap(t => t.clips).find(c => c.id === selectedClipId) || null;
+    }, [tracks, selectedClipId]);
 
     if (!selectedClip) {
         return (

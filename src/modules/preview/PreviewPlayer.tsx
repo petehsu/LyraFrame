@@ -4,32 +4,23 @@ import { ElementRenderer } from './ElementRenderer';
 export const PreviewPlayer = () => {
     const { tracks, currentTime } = useTimelineStore();
 
-    // 1. Gather all visible clips at current time
-    // 2. Sort by track order (or z-index if we had it)
-    // 3. Render them
-
-    // Reverse tracks so top track is "on top" visually? 
-    // Usually Video Editor logic: Track 1 is top? Or Track N is top?
-    // Let's assume Track 0 is BACKGROUND, Track N is FOREGROUND for now, or vice versa?
-    // Usually Track 1 (top of list) covers Track 2.
-    // So we render reverse order: (Bottom Tracks first -> Top Tracks last)
-
-    // Actually, standard NLE: Top track in list covers bottom track.
-    // HTML rendering order: Last child covers first child.
-    // So we should render Track(Last) ... Track(0).
-    // Wait.
-    // Track 1 (Top of timeline UI) = Top Layer.
-    // Track 2 = Below it.
-    // So in DOM, Track 2 should be rendered FIRST, Track 1 LAST.
-
+    /**
+     * 层级渲染逻辑 (Premiere Pro 风格):
+     * - zIndex 越大的 track 越靠前（覆盖其他）
+     * - 按 zIndex 升序排列：先渲染低层级，后渲染高层级
+     * - HTML 中后渲染的元素会覆盖先渲染的元素
+     */
     const activeClips = tracks
         .filter(t => t.visible)
-        .slice().reverse() // Render bottom-most tracks first
+        .sort((a, b) => a.zIndex - b.zIndex)  // 低 zIndex 先渲染
         .flatMap(track => {
-            // Find clips active at currentTime
+            // 找到当前时间活跃的 clips
             return track.clips.filter(clip =>
                 currentTime >= clip.start && currentTime < clip.start + clip.duration
-            );
+            ).map(clip => ({
+                ...clip,
+                trackZIndex: track.zIndex  // 附加 track 的 zIndex
+            }));
         });
 
     return (
@@ -38,16 +29,26 @@ export const PreviewPlayer = () => {
             style={{ backgroundColor: 'var(--color-base)' }}
         >
             {activeClips.map(clip => (
-                <ElementRenderer key={clip.id} clip={clip} />
+                <div
+                    key={clip.id}
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: clip.trackZIndex  // 使用 track 的 zIndex
+                    }}
+                >
+                    <ElementRenderer clip={clip} />
+                </div>
             ))}
 
-            {/* Overlay info for Debug */}
+            {/* Debug 信息 */}
             <div
                 className="absolute bottom-2 right-2 text-xs pointer-events-none"
-                style={{ color: 'var(--color-text-muted)' }}
+                style={{ color: 'var(--color-text-muted)', zIndex: 9999 }}
             >
-                {Math.floor(currentTime / 1000)}s
+                {Math.floor(currentTime / 1000)}s | {activeClips.length} clips
             </div>
         </div>
     );
 };
+

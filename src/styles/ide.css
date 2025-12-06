@@ -119,6 +119,7 @@ body,
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    box-shadow: var(--shadow-lg), var(--border-highlight);
 }
 
 /* ========================================
@@ -133,6 +134,7 @@ body,
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 /* ========================================
@@ -152,6 +154,7 @@ body,
     background-color: var(--color-surface);
     border-radius: var(--radius-panel);
     overflow: hidden;
+    box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 .ide-panel-header {
@@ -181,6 +184,7 @@ body,
     flex-direction: column;
     height: 100%;
     overflow: hidden;
+    box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 /* ========================================
@@ -406,8 +410,82 @@ body,
     border-bottom: 1px solid var(--color-border);
     background-image: linear-gradient(90deg, transparent 99px, var(--color-border) 99px);
     background-size: 100px 100%;
+    transition: all 0.2s ease;
 }
 
+/* ========================================
+   拖拽视觉反馈 - 液态效果
+   ======================================== */
+
+/* 拖拽目标 Track 高亮 */
+.timeline-track.drop-target {
+    background-color: var(--color-accent-muted);
+    box-shadow: inset 0 0 0 2px var(--color-accent);
+    animation: liquid-pulse 0.6s ease-in-out infinite;
+    border-radius: var(--radius-inner);
+}
+
+/* 拖拽时在目标 Track 显示预览位置 */
+.timeline-track.drop-target::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: var(--drop-preview-left, 0);
+    width: var(--drop-preview-width, 100px);
+    background: var(--color-accent);
+    opacity: 0.3;
+    border-radius: var(--radius-inner);
+    pointer-events: none;
+    animation: preview-pulse 0.8s ease-in-out infinite;
+}
+
+/* 预览脉冲动画 */
+@keyframes preview-pulse {
+
+    0%,
+    100% {
+        opacity: 0.2;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(1.01);
+    }
+}
+
+/* 液态波动动画 */
+@keyframes liquid-pulse {
+
+    0%,
+    100% {
+        box-shadow: inset 0 0 0 2px var(--color-accent),
+            0 0 20px var(--color-accent-muted),
+            var(--shadow-md);
+    }
+
+    50% {
+        box-shadow: inset 0 0 0 3px var(--color-accent),
+            0 0 35px var(--color-accent),
+            var(--shadow-lg);
+    }
+}
+
+/* 拖拽中的 Clip ghost 效果 */
+.timeline-clip.dragging {
+    opacity: 0.85;
+    transform: scale(1.03) translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5),
+        0 0 0 2px var(--color-accent),
+        var(--border-highlight);
+    z-index: 1000;
+    border-radius: var(--radius-inner);
+}
+
+/* ========================================
+   Timeline Clip - 立体感增强
+   ======================================== */
 .timeline-clip {
     position: absolute;
     top: 8px;
@@ -416,39 +494,54 @@ body,
     overflow: hidden;
     user-select: none;
     cursor: grab;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md), var(--border-highlight);
     transition: all var(--transition-fast);
+    /* 内部渐变增加立体感 */
+    background-blend-mode: overlay;
+}
+
+.timeline-clip::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            transparent 40%,
+            rgba(0, 0, 0, 0.1) 100%);
+    pointer-events: none;
+    border-radius: inherit;
 }
 
 .timeline-clip:hover {
-    filter: brightness(1.05);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    filter: brightness(1.08);
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: var(--shadow-lg), var(--border-highlight);
 }
 
 .timeline-clip.selected {
-    box-shadow: 0 0 0 2px var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent),
+        var(--shadow-lg);
 }
 
-/* Timeline Clip Color Variants */
+/* Timeline Clip Color Variants - 更丰富的渐变 */
 .timeline-clip[data-type="text"],
 .timeline-clip.clip-pink {
-    background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+    background: linear-gradient(135deg, #f472b6 0%, #ec4899 50%, #db2777 100%);
 }
 
 .timeline-clip[data-type="code"],
 .timeline-clip.clip-orange {
-    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    background: linear-gradient(135deg, #fbbf24 0%, #f97316 50%, #ea580c 100%);
 }
 
 .timeline-clip[data-type="image"],
 .timeline-clip.clip-mint {
-    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
 }
 
 .timeline-clip[data-type="video"],
 .timeline-clip.clip-coral {
-    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    background: linear-gradient(135deg, #fb7185 0%, #f43f5e 50%, #e11d48 100%);
 }
 
 /* Clip Name Inside */

@@ -21,10 +21,10 @@ export const AssetBrowser = () => {
 
     const handleAddAsset = (asset: Asset) => {
         const targetTrackId = 'track-1';
+        // 不指定 start，让 addClip 自动放在 track 末尾
         addClip(targetTrackId, {
             type: asset.type,
             name: asset.name,
-            start: 0,
             duration: 3000,
             content: asset.content,
             properties: {}

@@ -1,7 +1,19 @@
 export type ClipType = 'video' | 'image' | 'text' | 'code' | 'audio';
 
+export interface TextStyle {
+    color?: string;
+    fontSize?: string;
+    fontWeight?: string;
+    fontFamily?: string;
+    textShadow?: string;
+    textAlign?: 'left' | 'center' | 'right';
+}
+
 export interface ClipProperty {
-    [key: string]: any;
+    style?: TextStyle;
+    opacity?: number;
+    scale?: number;
+    rotation?: number;
 }
 
 export interface Clip {
@@ -23,6 +35,7 @@ export interface Track {
     clips: Clip[];
     visible: boolean;
     locked: boolean;
+    zIndex: number;  // 层级，数字越大越靠前（覆盖其他）
 }
 
 export interface ProjectState {

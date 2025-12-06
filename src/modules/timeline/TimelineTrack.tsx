@@ -9,7 +9,11 @@ interface TimelineTrackProps {
 
 export const TimelineTrack = ({ track, pixelsPerSecond, totalWidth }: TimelineTrackProps) => {
     return (
-        <div style={{ width: totalWidth, minWidth: '100%' }} className="timeline-track relative">
+        <div
+            style={{ width: totalWidth, minWidth: '100%' }}
+            className="timeline-track relative"
+            data-track-id={track.id}
+        >
             {/* Grid Lines (now handled by CSS bg image) */}
 
             {track.clips.map(clip => (

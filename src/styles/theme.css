@@ -83,11 +83,16 @@
   --color-warning: #fbbf24;
   --color-error: #f87171;
 
-  /* Shadow */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
-  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  /* Shadow - 更强的立体感 */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4);
+  --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-inset-light: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* 立体边框高光 */
+  --border-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 
   /* Logo color for dark mode */
   --logo-color: #ffffff;
@@ -122,10 +127,14 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
-  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-inset-light: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  --border-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 
   /* Logo color for light mode */
   --logo-color: #000000;
@@ -220,12 +229,13 @@ body {
 }
 
 /* ========================================
-   Panel - 独立圆角面板样式
+   Panel - 独立圆角面板样式（立体感）
    ======================================== */
 .panel {
   background: var(--color-surface);
   border-radius: var(--radius-panel);
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md), var(--border-highlight);
   overflow: hidden;
 }
 
@@ -255,6 +265,7 @@ body {
   padding: var(--space-2) 0;
   gap: var(--space-1);
   border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 .ab-icon {
@@ -335,7 +346,7 @@ body {
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  background: var(--color-accent);
+  background: linear-gradient(180deg, var(--color-accent-hover) 0%, var(--color-accent) 100%);
   border: none;
   border-radius: var(--radius-button);
   color: white;
@@ -343,25 +354,32 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .modern-button:hover {
-  background: var(--color-accent-hover);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .modern-button:active {
-  transform: scale(0.98);
+  transform: scale(0.98) translateY(0);
+  box-shadow: var(--shadow-sm);
 }
 
 .modern-button-secondary {
-  background: var(--color-elevated);
+  background: linear-gradient(180deg, var(--color-hover) 0%, var(--color-elevated) 100%);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm), var(--border-highlight);
 }
 
 .modern-button-secondary:hover {
-  background: var(--color-hover);
+  background: linear-gradient(180deg, var(--color-elevated) 0%, var(--color-hover) 100%);
   border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md), var(--border-highlight);
+  transform: translateY(-1px);
 }
 
 /* ========================================
