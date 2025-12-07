@@ -39,20 +39,16 @@ export const LightRenderer = ({ content, clipId }: LightRendererProps) => {
             width: '100%',
             height: '100%',
             position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'var(--color-base)'
         }}>
             <canvas
                 ref={canvasRef}
                 width={1920}
                 height={1080}
                 style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    borderRadius: 'var(--radius-inner)',
-                    boxShadow: 'var(--shadow-md)'
+                    width: '100%',
+                    height: '100%',
+                    display: 'block',
+                    objectFit: 'contain',  // 保持比例，不拉伸
                 }}
             />
 

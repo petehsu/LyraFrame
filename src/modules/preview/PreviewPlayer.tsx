@@ -2,20 +2,9 @@ import { useTimelineStore } from '../../store/timelineStore';
 import { useTranslation } from 'react-i18next';
 import { ElementRenderer } from './ElementRenderer';
 
-// 预设视频比例
-const ASPECT_RATIOS = {
-    '16:9': 16 / 9,
-    '9:16': 9 / 16,
-    '4:3': 4 / 3,
-    '1:1': 1,
-} as const;
-
 export const PreviewPlayer = () => {
     const { tracks, currentTime } = useTimelineStore();
     const { t } = useTranslation();
-
-    // 默认使用 16:9 比例
-    const aspectRatio = ASPECT_RATIOS['16:9'];
 
     /**
      * 层级渲染逻辑 (Premiere Pro 风格):
@@ -38,28 +27,22 @@ export const PreviewPlayer = () => {
 
     return (
         <div
-            className="w-full h-full flex items-center justify-center"
+            className="w-full h-full"
             style={{
-                backgroundColor: 'var(--color-base)',
+                position: 'relative',
                 overflow: 'hidden',
             }}
         >
-            {/* 视频画布容器 - 保持比例并强制裁剪 */}
+            {/* 视频画布容器 - 完全填满预览区域 */}
             <div
                 className="preview-canvas"
                 style={{
-                    position: 'relative',
-                    aspectRatio: aspectRatio,
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    width: 'auto',
-                    height: '100%',
+                    position: 'absolute',
+                    inset: 0,
                     backgroundColor: '#000',
-                    borderRadius: 'var(--radius-sm)',
-                    boxShadow: '0 0 40px rgba(0, 0, 0, 0.5)',
-                    // 多重 overflow 控制确保内容被裁剪
+                    borderRadius: 'var(--radius-panel)',
                     overflow: 'hidden',
-                    isolation: 'isolate', // 创建新的层叠上下文
+                    isolation: 'isolate',
                 }}
             >
                 {/* 内容容器 - 确保所有子元素都被裁剪 */}

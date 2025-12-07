@@ -80,24 +80,29 @@ const MAX_TRACKS = 50;
  * 2. 在最底部添加 1 个空轨道
  * 3. 至少保留 MIN_TRACKS 个轨道
  * 4. 重新分配 zIndex 和 name
+ * 
+ * zIndex 规则 (Premiere Pro 风格):
+ * - UI 上第一行 (Track 1) = 最高 zIndex = 覆盖其他轨道
+ * - UI 上最后一行 = 最低 zIndex = 被其他轨道覆盖
  */
 const normalizeTracks = (tracks: Track[]): Track[] => {
     if (tracks.length === 0) return tracks;
 
-    // 按 zIndex 排序 (低的在顶部 UI)
-    const sorted = [...tracks].sort((a, b) => a.zIndex - b.zIndex);
+    // 按 zIndex 降序排序 (高的在顶部 UI，覆盖其他)
+    const sorted = [...tracks].sort((a, b) => b.zIndex - a.zIndex);
 
     // 分离有素材和空的轨道
     const nonEmpty = sorted.filter(t => t.clips.length > 0);
 
     // 重建轨道列表：所有有素材的轨道 + 1 个空轨道
+    // zIndex 规则：第一个轨道 (idx=0) 有最高 zIndex
     let result: Track[] = nonEmpty.map((t, idx) => ({
         ...t,
-        zIndex: idx,  // 重新分配 zIndex
-        name: `Track ${idx + 1}`  // 重新分配 name
+        zIndex: MAX_TRACKS - idx,  // 第一个轨道 zIndex 最高
+        name: `Track ${idx + 1}`
     }));
 
-    // 添加 1 个空轨道到底部
+    // 添加 1 个空轨道到底部 (最低 zIndex)
     if (result.length < MAX_TRACKS) {
         result.push({
             id: generateId(),
@@ -105,7 +110,7 @@ const normalizeTracks = (tracks: Track[]): Track[] => {
             type: 'video',
             visible: true,
             locked: false,
-            zIndex: result.length,
+            zIndex: MAX_TRACKS - result.length,  // 新轨道 zIndex 更低
             clips: []
         });
     }
@@ -118,7 +123,7 @@ const normalizeTracks = (tracks: Track[]): Track[] => {
             type: 'video',
             visible: true,
             locked: false,
-            zIndex: result.length,
+            zIndex: MAX_TRACKS - result.length,
             clips: []
         });
     }
@@ -170,7 +175,7 @@ const INITIAL_STATE: ProjectState = {
             type: 'video',
             visible: true,
             locked: false,
-            zIndex: 0,  // 最上层显示在 UI 第一行，但渲染时在底层
+            zIndex: 50,  // Track 1 在 UI 最上面，zIndex 最高，覆盖其他轨道
             clips: [
                 {
                     id: 'clip-demo-1',
@@ -217,7 +222,7 @@ ctx.fillText("Code Video", canvas.width/2, canvas.height/2);`,
             type: 'video',
             visible: true,
             locked: false,
-            zIndex: 1,  // Track 2 在 UI 第二行，但渲染时覆盖 Track 1
+            zIndex: 49,  // Track 2 在 UI 第二行，zIndex 较低，被 Track 1 覆盖
             clips: []
         }
     ]

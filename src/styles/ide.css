@@ -78,6 +78,12 @@
     overflow: hidden;
 }
 
+/* ide-top-panel 内的 Allotment Pane 样式 */
+.ide-top-panel .split-view-view>* {
+    border-radius: var(--radius-panel);
+    overflow: hidden;
+}
+
 
 /* ========================================
    Context Menu & Copy Blocking
@@ -148,27 +154,49 @@ body,
 }
 
 /* ========================================
-   Preview Section - 预览区域
+   Top Panel - 预览 + 代码编辑器
+   高度由 JavaScript 动态计算
+   ======================================== */
+.ide-top-panel {
+    width: 100%;
+    /* 高度由 inline style 控制 */
+    flex-shrink: 0;
+    display: flex;
+    gap: var(--gap-panel);
+    overflow: hidden;
+}
+
+/* ========================================
+   Preview Section - 预览区域容器
+   视频保持正确比例，填满整个区域
    ======================================== */
 .ide-preview-area {
-    flex: 1;
-    min-height: 0;
+    height: 100%;
     background-color: #000;
     border-radius: var(--radius-panel);
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
     box-shadow: var(--shadow-lg), var(--border-highlight);
 }
 
 /* ========================================
-   Bottom Panel - 编辑器/时间轴
+   Code Editor Area - 代码编辑区域
+   ======================================== */
+.ide-code-editor-area {
+    height: 100%;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-panel);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-md), var(--border-highlight);
+}
+
+/* ========================================
+   Bottom Panel - 时间轴（自动填满剩余空间）
    ======================================== */
 .ide-bottom-panel {
-    height: 280px;
-    flex-shrink: 0;
+    width: 100%;
+    min-height: 200px;
     background-color: var(--color-surface);
     border-radius: var(--radius-panel);
     position: relative;

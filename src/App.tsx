@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PreviewPlayer } from './modules/preview/PreviewPlayer';
 import { TimelineContainer } from './modules/timeline/TimelineContainer';
 import { AssetBrowser } from './modules/assets/AssetBrowser';
@@ -13,15 +13,61 @@ import { useTranslation } from 'react-i18next';
 import { Workbench } from './components/layout/Workbench';
 import { ActivityBar } from './components/layout/ActivityBar';
 import { SidePanel } from './components/layout/SidePanel';
-import { Allotment } from 'allotment';
 
 // Styles
 import './styles/loading.css';
+
+// 视频比例
+const ASPECT_RATIO = 16 / 9;
+// 最小时间轴高度
+const MIN_TIMELINE_HEIGHT = 220;
+// 代码编辑器最小宽度
+const MIN_CODE_EDITOR_WIDTH = 300;
 
 function App() {
   const [activeTab, setActiveTab] = useState('files');
   const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
+
+  // 动态计算的视频预览尺寸（尽可能大）
+  const [previewSize, setPreviewSize] = useState({ width: 800, height: 450 });
+  const mainAreaRef = useRef<HTMLDivElement>(null);
+
+  // 监听主区域尺寸变化，动态计算最大预览尺寸
+  useEffect(() => {
+    if (!mainAreaRef.current || isLoading) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const availableWidth = entry.contentRect.width - MIN_CODE_EDITOR_WIDTH - 16; // 16px gap
+        const availableHeight = entry.contentRect.height - MIN_TIMELINE_HEIGHT - 16; // 16px gap
+
+        // 根据比例计算最大可能的预览尺寸
+        const heightBasedWidth = availableHeight * ASPECT_RATIO;
+        const widthBasedHeight = availableWidth / ASPECT_RATIO;
+
+        let width, height;
+        if (heightBasedWidth <= availableWidth) {
+          // 高度是限制因素
+          width = heightBasedWidth;
+          height = availableHeight;
+        } else {
+          // 宽度是限制因素
+          width = availableWidth;
+          height = widthBasedHeight;
+        }
+
+        // 确保最小尺寸
+        width = Math.max(400, width);
+        height = Math.max(225, height);
+
+        setPreviewSize({ width, height });
+      }
+    });
+
+    observer.observe(mainAreaRef.current);
+    return () => observer.disconnect();
+  }, [isLoading]);
 
   useEffect(() => {
     // 等待应用完全就绪的策略
@@ -113,25 +159,30 @@ function App() {
         activityBar={<ActivityBar activeTab={activeTab} onTabChange={setActiveTab} />}
         sidebar={renderSidebar()}
         mainArea={
-          <div className="ide-main-area">
-            {/* Top: Preview */}
-            <div className="ide-preview-area">
-              <PreviewPlayer />
+          <div ref={mainAreaRef} className="ide-main-area">
+            {/* Top: Preview + Code Editor */}
+            <div className="ide-top-panel" style={{ height: previewSize.height }}>
+              {/* Left: Preview - 动态计算最大尺寸 */}
+              <div
+                className="ide-preview-area"
+                style={{
+                  width: previewSize.width,
+                  height: previewSize.height,
+                  flexShrink: 0
+                }}
+              >
+                <PreviewPlayer />
+              </div>
+
+              {/* Right: Code Editor - 弹性填充剩余空间 */}
+              <div className="ide-code-editor-area" style={{ flex: 1, minWidth: MIN_CODE_EDITOR_WIDTH }}>
+                <CodeEditorPanel />
+              </div>
             </div>
 
-            {/* Bottom area with Code Editor and Timeline */}
-            <div className="ide-bottom-panel" style={{ flex: 1 }}>
-              <Allotment>
-                {/* Left: Code Editor */}
-                <Allotment.Pane preferredSize={400}>
-                  <CodeEditorPanel />
-                </Allotment.Pane>
-
-                {/* Right: Timeline */}
-                <Allotment.Pane>
-                  <TimelineContainer />
-                </Allotment.Pane>
-              </Allotment>
+            {/* Bottom: Timeline - 自动填满剩余空间 */}
+            <div className="ide-bottom-panel" style={{ flex: 1, minHeight: MIN_TIMELINE_HEIGHT }}>
+              <TimelineContainer />
             </div>
           </div>
         }
