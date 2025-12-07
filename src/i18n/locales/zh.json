@@ -12,9 +12,17 @@
             "properties": "属性",
             "timeline": "时间轴",
             "ai": "Lyra AI"
+        },
+        "assetBrowser": {
+            "media": "媒体",
+            "projects": "项目",
+            "effects": "效果"
         }
     },
     "editor": {
         "placeholder": "// 选择一个片段以编辑代码"
+    },
+    "preview": {
+        "clips": "个片段"
     }
 }

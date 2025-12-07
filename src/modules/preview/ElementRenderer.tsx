@@ -37,8 +37,41 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
             );
 
         case 'code':
-            // 🚀 使用高性能 LightExecutor
-            // 优势：60fps、无延迟、易于录制视频
+            // 检测内容类型：HTML 还是 Canvas JavaScript
+            const isHtmlContent = clip.content.trim().startsWith('<');
+
+            if (isHtmlContent) {
+                // HTML/CSS 内容 - 使用 iframe 安全隔离渲染
+                const htmlDoc = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            * { margin: 0; padding: 0; box-sizing: border-box; }
+                            html, body { width: 100%; height: 100%; overflow: hidden; }
+                        </style>
+                    </head>
+                    <body>${clip.content}</body>
+                    </html>
+                `;
+                return (
+                    <iframe
+                        srcDoc={htmlDoc}
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            border: 'none',
+                            pointerEvents: 'none',
+                        }}
+                        sandbox="allow-scripts"
+                        title={clip.name}
+                    />
+                );
+            }
+
+            // Canvas JavaScript 内容 - 使用 LightExecutor
             return (
                 <div style={{
                     position: 'absolute',
@@ -46,7 +79,7 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: 'var(--space-4)'
+                    overflow: 'hidden',
                 }}>
                     <LightRenderer
                         content={clip.content}

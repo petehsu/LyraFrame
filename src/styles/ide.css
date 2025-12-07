@@ -8,35 +8,76 @@
    ============================================ */
 
 /* ========================================
-   Allotment Sash Styling - 分隔条样式
-   使其融入间隙设计
+   Allotment 全局间隙系统
+   核心原理：使用 CSS 变量和 padding 在 split-view-view 内部创建间隙
    ======================================== */
+
+/* 分隔条透明 */
 .split-view-view-visible::before {
     display: none;
 }
 
-[data-sash-index] {
-    background: transparent !important;
-    transition: background 0.2s ease;
+/* Sash 尺寸和样式 */
+:root {
+    --sash-size: var(--gap-panel);
 }
 
-[data-sash-index]:hover {
+.ide-workbench .sash-container .sash {
+    background: transparent !important;
+    transition: background 0.15s ease;
+}
+
+.ide-workbench .sash-container .sash:hover {
     background: var(--color-accent-muted) !important;
 }
 
-/* Sash Handle Indicator */
-.sash-container .sash {
-    background: transparent;
+/* ========================================
+   通用 Pane 间隙规则
+   所有 split-view-view 内的直接子元素添加 padding
+   ======================================== */
+
+/* 水平 Allotment (默认) - 在每个 pane 左右添加 padding */
+.ide-workbench .split-view-view {
+    /* 使用 padding 而不是 margin，避免影响 Allotment 计算 */
+    padding: 0 calc(var(--gap-panel) / 2);
 }
 
-.sash-container .sash:hover::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--color-accent);
-    opacity: 0.3;
-    border-radius: 2px;
+/* 第一个 Pane 左侧不需要 padding */
+.ide-workbench .split-view-view:first-child {
+    padding-left: 0;
 }
+
+/* 最后一个 Pane 右侧不需要 padding */
+.ide-workbench .split-view-view:last-child {
+    padding-right: 0;
+}
+
+/* 垂直 Allotment - 上下 padding */
+.ide-workbench .split-view-container.vertical>.split-view-view {
+    padding: calc(var(--gap-panel) / 2) 0;
+}
+
+.ide-workbench .split-view-container.vertical>.split-view-view:first-child {
+    padding-top: 0;
+}
+
+.ide-workbench .split-view-container.vertical>.split-view-view:last-child {
+    padding-bottom: 0;
+}
+
+/* ========================================
+   嵌套 Allotment 修正
+   内部 Allotment 继承父级的 padding 规则
+   ======================================== */
+
+/* ide-bottom-panel 内的 Allotment Pane 需要圆角和阴影 */
+.ide-bottom-panel .split-view-view>* {
+    background: var(--color-surface);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-sm), var(--border-highlight);
+    overflow: hidden;
+}
+
 
 /* ========================================
    Context Menu & Copy Blocking

@@ -1,4 +1,5 @@
 import { useTimelineStore } from '../../store/timelineStore';
+import { useTranslation } from 'react-i18next';
 import type { ClipType } from '../../store/types';
 
 interface Asset {
@@ -18,6 +19,7 @@ const MOCK_ASSETS: Asset[] = [
 
 export const AssetBrowser = () => {
     const { addClip } = useTimelineStore();
+    const { t } = useTranslation();
 
     const handleAddAsset = (asset: Asset) => {
         const targetTrackId = 'track-1';
@@ -39,19 +41,19 @@ export const AssetBrowser = () => {
                     className="modern-button"
                     style={{ padding: '6px 14px', fontSize: 12 }}
                 >
-                    Media
+                    {t('app.assetBrowser.media')}
                 </button>
                 <button
                     className="modern-button-secondary"
                     style={{ padding: '6px 14px', fontSize: 12 }}
                 >
-                    Projects
+                    {t('app.assetBrowser.projects')}
                 </button>
                 <button
                     className="modern-button-secondary"
                     style={{ padding: '6px 14px', fontSize: 12 }}
                 >
-                    Effects
+                    {t('app.assetBrowser.effects')}
                 </button>
             </div>
 

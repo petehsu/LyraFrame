@@ -12,9 +12,17 @@
             "properties": "Properties",
             "timeline": "Timeline",
             "ai": "Lyra AI"
+        },
+        "assetBrowser": {
+            "media": "Media",
+            "projects": "Projects",
+            "effects": "Effects"
         }
     },
     "editor": {
         "placeholder": "// Select a clip to edit code"
+    },
+    "preview": {
+        "clips": "clips"
     }
 }
