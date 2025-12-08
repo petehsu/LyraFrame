@@ -1,21 +1,26 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTimelineStore } from '../../store/timelineStore';
 import { TimelineRuler } from './TimelineRuler';
 import { TimelineTrack } from './TimelineTrack';
 import { PlayheadCursor } from './PlayheadCursor';
 
-// Constants
-const TRACK_HEADER_WIDTH = 128; // 8rem = 128px
-const TRACK_HEADER_WIDTH_CSS = '8rem';
+import {
+    TRACK_HEADER_WIDTH,
+    TRACK_HEADER_WIDTH_CSS
+} from '../../config/constants';
+
+// Constants (Moved to config/constants.ts)
 
 export const TimelineContainer = () => {
+    const { t } = useTranslation();
     const { tracks, duration, zoom } = useTimelineStore();
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const PIXELS_PER_SECOND = 100 * zoom;
     const totalWidth = (duration / 1000) * PIXELS_PER_SECOND;
 
     return (
-        <div className="flex flex-col h-full select-none bg-[var(--vscode-bg-base)]">
+        <div className="flex flex-col h-full select-none bg-[var(--vscode-bg-base)] rounded-[inherit] overflow-hidden">
             {/* Toolbar Area (Zoom, Snap, etc) - MVP Skip */}
 
             {/* Main Scroll Area */}
@@ -52,7 +57,9 @@ export const TimelineContainer = () => {
                                         color: 'var(--vscode-fg-muted)'
                                     }}
                                 >
-                                    {track.name}
+                                    {track.name.startsWith('Track ')
+                                        ? `${t('timeline.track')} ${track.name.substring(6)}`
+                                        : track.name}
                                 </div>
 
                                 {/* Track Content */}

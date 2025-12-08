@@ -1,21 +1,30 @@
 {
+    "timeline": {
+        "track": "轨道"
+    },
     "app": {
         "title": "LyraFrame",
         "activityBar": {
-            "explorer": "资源管理器",
+            "explorer": "项目",
             "search": "搜索",
             "git": "源代码管理",
-            "extensions": "扩展"
+            "extensions": "扩展",
+            "assets": "素材库"
+        },
+        "placeholders": {
+            "searchNotImplemented": "搜索功能尚未实现",
+            "gitNotImplemented": "Git 功能尚未实现",
+            "extensionsComingSoon": "扩展市场即将推出"
         },
         "panels": {
-            "assets": "资源库",
+            "assets": "素材库",
             "properties": "属性",
             "timeline": "时间轴",
             "ai": "Lyra AI"
         },
         "assetBrowser": {
-            "media": "媒体",
-            "projects": "项目",
+            "media": "素材",
+            "projects": "代码",
             "effects": "效果"
         }
     },
@@ -24,5 +33,17 @@
     },
     "preview": {
         "clips": "个片段"
+    },
+    "projectManager": {
+        "subtitle": "代码驱动的视频创作",
+        "createNew": "新建项目",
+        "openExisting": "打开项目",
+        "recentProjects": "最近项目",
+        "noRecentProjects": "暂无最近项目",
+        "remove": "移除"
+    },
+    "sidebar": {
+        "projectFiles": "项目文件",
+        "assetLibrary": "素材库"
     }
 }

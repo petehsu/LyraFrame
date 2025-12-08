@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
-import type { Clip } from '../../store/types';
 import { useTimelineStore } from '../../store/timelineStore';
+import type { Clip } from '../../store/types';
 
 interface TimelineClipProps {
     clip: Clip;
@@ -16,30 +15,12 @@ const snapToGrid = (timeMs: number, intervalMs: number): number => {
 };
 
 export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
-    const { updateClipWithCollision, selectedClipId, selectClip, deleteSelectedClip, moveClipToTrack } = useTimelineStore();
+    const { updateClipWithCollision, selectedClipId, selectClip, moveClipToTrack, duration } = useTimelineStore();
     const left = (clip.start / 1000) * pixelsPerSecond;
     const width = (clip.duration / 1000) * pixelsPerSecond;
     const isSelected = selectedClipId === clip.id;
 
-    // ========== 键盘删除快捷键 ==========
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // 只有当此 clip 被选中时才响应删除
-            if (!isSelected) return;
 
-            // 检查是否在输入框中
-            const target = e.target as HTMLElement;
-            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                e.preventDefault();
-                deleteSelectedClip();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isSelected, deleteSelectedClip]);
 
     // ========== Main clip drag (move position + cross-track) ==========
     const handleClipDrag = (e: React.PointerEvent) => {
@@ -51,13 +32,13 @@ export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
         const startY = e.clientY;
         const originStart = clip.start;
         const originTrackId = clip.trackId;
+        let lastNewStart = originStart;
 
         const target = e.currentTarget as HTMLElement;
         target.setPointerCapture(e.pointerId);
         target.style.cursor = 'grabbing';
-        target.classList.add('dragging');  // 添加拖拽样式
+        target.classList.add('dragging');
 
-        let lastNewStart = originStart;
         let lastHighlightedTrack: Element | null = null;
 
         const handleMove = (ev: PointerEvent) => {
@@ -65,6 +46,11 @@ export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
             const deltaY = ev.clientY - startY;
             const deltaTime = (deltaX / pixelsPerSecond) * 1000;
             let newStart = Math.max(0, originStart + deltaTime);
+
+            // Constraint: Cannot drag past end of timeline
+            if (newStart + clip.duration > duration) {
+                newStart = Math.max(0, duration - clip.duration);
+            }
 
             // Snap to grid
             newStart = snapToGrid(newStart, SNAP_INTERVAL_MS);
@@ -75,7 +61,6 @@ export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
 
             // ========== 视觉反馈：高亮目标 Track ==========
             if (Math.abs(deltaY) > 20) {
-                // 临时隐藏当前元素以获取下方元素
                 target.style.pointerEvents = 'none';
                 const elementUnder = document.elementFromPoint(ev.clientX, ev.clientY);
                 target.style.pointerEvents = '';
@@ -110,7 +95,7 @@ export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
         const handleUp = (ev: PointerEvent) => {
             target.releasePointerCapture(ev.pointerId);
             target.style.cursor = '';
-            target.classList.remove('dragging');  // 移除拖拽样式
+            target.classList.remove('dragging');
             target.removeEventListener('pointermove', handleMove);
             target.removeEventListener('pointerup', handleUp);
 
@@ -186,6 +171,7 @@ export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
 
         const startX = e.clientX;
         const originDuration = clip.duration;
+        const originStart = clip.start;
 
         const target = e.currentTarget as HTMLElement;
         target.setPointerCapture(e.pointerId);
@@ -197,6 +183,11 @@ export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
 
             // Snap to grid
             newDuration = snapToGrid(newDuration, SNAP_INTERVAL_MS);
+
+            // Constraint: Cannot drag past end of timeline
+            if (originStart + newDuration > duration) {
+                newDuration = Math.max(100, duration - originStart);
+            }
 
             // Ensure minimum duration (100ms)
             if (newDuration < 100) newDuration = 100;
@@ -244,4 +235,3 @@ export const TimelineClip = ({ clip, pixelsPerSecond }: TimelineClipProps) => {
         </div>
     );
 };
-

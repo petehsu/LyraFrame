@@ -57,6 +57,7 @@ describe('timelineStore', () => {
                 name: 'Test Clip',
                 start: 0,
                 duration: 1000,
+                source: 'scenes/test.tsx',
                 content: 'Hello World',
                 properties: {}
             });
@@ -75,6 +76,7 @@ describe('timelineStore', () => {
                 name: 'Test Clip',
                 start: 0,
                 duration: 1000,
+                source: 'scenes/test.tsx',
                 content: 'Hello',
                 properties: {}
             });
@@ -95,6 +97,7 @@ describe('timelineStore', () => {
                 name: 'Original',
                 start: 0,
                 duration: 1000,
+                source: 'scenes/original.tsx',
                 content: 'Hello',
                 properties: {}
             });
@@ -116,6 +119,7 @@ describe('timelineStore', () => {
                 name: 'Test Clip',
                 start: 0,
                 duration: 1000,
+                source: 'scenes/test.tsx',
                 content: 'Hello',
                 properties: {}
             });

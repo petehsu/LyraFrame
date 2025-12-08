@@ -7,6 +7,7 @@ export const TimelineRuler = () => {
 
     // Constants
     const PIXELS_PER_SECOND = 100 * zoom;
+    const totalWidth = (duration / 1000) * PIXELS_PER_SECOND;
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -15,77 +16,63 @@ export const TimelineRuler = () => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Resize observer could go here, for now assume fill parent width
-        const parent = canvas.parentElement;
-        if (parent) {
-            canvas.width = parent.clientWidth;
-            canvas.height = 30; // Fixed height in CSS var usually
-        }
+        // Ensure canvas matches totalWidth exactly (plus buffer)
+        // Use Math.ceil to avoid sub-pixel clipping
+        const requiredWidth = Math.ceil(totalWidth);
+
+        // Only update if needed to prevent flickering loop (though React handles ref update)
+        // Actually, setting width ALWAYS clears canvas, so we must redraw.
+        canvas.width = requiredWidth;
+        canvas.height = 30;
 
         const width = canvas.width;
         const height = canvas.height;
 
-        // Clear
-        ctx.fillStyle = '#1e1e1e'; // var(--color-bg-surface) approx
+        // Clear (implicitly done by setting width, but being explicit is fine)
         ctx.clearRect(0, 0, width, height);
 
-        ctx.strokeStyle = '#666'; // var(--color-text-muted) approx
+        ctx.strokeStyle = '#666'; // var(--color-text-muted)
         ctx.fillStyle = '#999';
         ctx.font = '10px Inter';
         ctx.lineWidth = 1;
 
         const totalSeconds = duration / 1000;
 
-        // Draw Ticks
-        // We only draw what's visible? MVP draws all or simple scroll
-        // For MVP, let's assume the timeline container scrolls, so we draw strictly based on width
-        // Actually, if we want native scroll, this component should be as wide as the content.
-
-        // Better approach: This canvas component stays sticky on top, but we translate the drawing based on scroll offset.
-        // BUT, complex.
-        // Simple approach: The canvas IS the width of the entire timeline track area.
-
-        // Let's go with: Canvas width = duration * pixels_per_second
-        // Then the parent container handles the overflow-x scroll.
-
-        const totalWidth = (duration / 1000) * PIXELS_PER_SECOND;
-
-        // If we want the canvas to be huge, we might hit limits. 30s * 100px = 3000px (Fine).
-        // 1 hour video -> boom.
-        // For LyraFrame Phase 1/2 (Short videos), big canvas is OK.
-
-        if (canvas.width !== totalWidth) {
-            canvas.width = Math.max(totalWidth, parent?.clientWidth || 0);
-        }
-
         ctx.beginPath();
-        // Optimize loop: only draw every 0.1s might be too dense visually. 
-        // Let's draw ticks every 0.5s but label every 1s
         const step = 0.5;
 
         for (let sec = 0; sec <= totalSeconds; sec += step) {
             const x = sec * PIXELS_PER_SECOND;
-            // Major tick every second
-            const isMajor = Math.abs(sec % 1) < 0.01;
 
+            // Optimization: Skip drawing if x is effectively outside (though limiting loop is better)
+            if (x > width) break;
+
+            const isMajor = Math.abs(sec % 1) < 0.01;
             const tickHeight = isMajor ? 10 : 5;
             const y = height - tickHeight;
 
-            ctx.moveTo(x + 0.5, height);
-            ctx.lineTo(x + 0.5, y);
+            // Draw at exact pixel coordinates to avoid blurring
+            // Adding 0.5 is usually good for 1px lines in Canvas 2D
+            // But let's try exact first as requested.
+            // If user sees blur, we can add 0.5 back.
+            // Actually, for 1px line, if x is integer, center is x+0.5.
+            // If x is float, align to grid.
+            const drawX = Math.round(x) + 0.5;
+
+            ctx.moveTo(drawX, height);
+            ctx.lineTo(drawX, y);
 
             if (isMajor) {
-                // Time label
-                ctx.fillStyle = '#888'; // Slightly brighter text
-                ctx.fillText(formatTime(sec), x + 4, height - 12);
+                ctx.fillStyle = '#888';
+                ctx.fillText(formatTime(sec), drawX + 4, height - 12);
             }
         }
-        ctx.strokeStyle = '#444'; // Subtle ticks
+        ctx.strokeStyle = '#444';
         ctx.stroke();
 
-    }, [duration, zoom]); // Re-draw on zoom/duration change
+    }, [duration, zoom, totalWidth]);
 
-    // Interaction
+    // Interaction handlers...
     const handlePointerDown = (e: React.PointerEvent) => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
@@ -93,17 +80,13 @@ export const TimelineRuler = () => {
         const x = e.clientX - rect.left;
         const time = (x / PIXELS_PER_SECOND) * 1000;
         setPlayhead(Math.max(0, Math.min(time, duration)));
-
-        // Capture pointer for scrubbing
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {
         if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
-
         const x = e.clientX - rect.left;
         const time = (x / PIXELS_PER_SECOND) * 1000;
         setPlayhead(Math.max(0, Math.min(time, duration)));
@@ -115,9 +98,10 @@ export const TimelineRuler = () => {
                 ref={canvasRef}
                 className="timeline-ruler block cursor-pointer"
                 height={30}
+                // Do NOT set width via prop, handled in effect
+                style={{ width: `${Math.ceil(totalWidth)}px`, height: '30px' }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
-                style={{ minWidth: '100%' }}
             />
         </div>
     );

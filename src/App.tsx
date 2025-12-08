@@ -1,142 +1,148 @@
 import { useState, useEffect, useRef } from 'react';
 import { PreviewPlayer } from './modules/preview/PreviewPlayer';
 import { TimelineContainer } from './modules/timeline/TimelineContainer';
-import { AssetBrowser } from './modules/assets/AssetBrowser';
-import { PropertyPanel } from './modules/inspector/PropertyPanel';
+import { TransportBar } from './modules/timeline/TransportBar';
 import { AIChatWidget } from './modules/ai/AIChatWidget';
-import { CodeEditorPanel } from './modules/editor/CodeEditorPanel';
+import { EditorContainer } from './modules/editor/EditorContainer';
 import { LoadingScreen } from './components/LoadingScreen';
+import type { ProjectContext } from './services/projectService';
+import { useProjectSync } from './hooks/useProjectSync';
+import { useTimelineStore } from './store/timelineStore';
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
+import { useResponsiveLayout } from './hooks/useResponsiveLayout';
 
 import { useTranslation } from 'react-i18next';
 
 // Layout V2
 import { Workbench } from './components/layout/Workbench';
 import { ActivityBar } from './components/layout/ActivityBar';
-import { SidePanel } from './components/layout/SidePanel';
+import { SidebarContainer } from './components/layout/SidebarContainer';
 
 // Styles
 import './styles/loading.css';
 
-// 视频比例
-const ASPECT_RATIO = 16 / 9;
-// 最小时间轴高度
-const MIN_TIMELINE_HEIGHT = 220;
-// 代码编辑器最小宽度
-const MIN_CODE_EDITOR_WIDTH = 300;
+// Context
+import { ProjectHandleContext } from './contexts/ProjectContext';
+
+// 最小时间轴高度 (Moved to config)
+// 代码编辑器最小宽度 (Moved to config)
 
 function App() {
   const [activeTab, setActiveTab] = useState('files');
   const [isLoading, setIsLoading] = useState(true);
+  const [currentProject, setCurrentProject] = useState<ProjectContext | null>(null);
   const { t } = useTranslation();
 
-  // 动态计算的视频预览尺寸（尽可能大）
-  const [previewSize, setPreviewSize] = useState({ width: 800, height: 450 });
   const mainAreaRef = useRef<HTMLDivElement>(null);
 
-  // 监听主区域尺寸变化，动态计算最大预览尺寸
+  // Custom Hook: Layout Resizing
+  const { previewSize } = useResponsiveLayout(mainAreaRef, isLoading);
+
+
+
+  // Custom Hook: Project Sync (Auto Load & Save)
+  useProjectSync(currentProject);
+
+  // 当前打开的文件
+  const [activeFile, setActiveFile] = useState<{
+    name: string;
+    path: string;
+    content: string | null;
+    handle: FileSystemFileHandle;
+    blobUrl?: string;
+  } | null>(null);
+
+  // 获取 selectedClipId
+  const selectedClipId = useTimelineStore(state => state.selectedClipId);
+
+  // 当用户点击时间轴上的 clip 时，清除 activeFile，让编辑器显示 clip 内容
   useEffect(() => {
-    if (!mainAreaRef.current || isLoading) return;
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const availableWidth = entry.contentRect.width - MIN_CODE_EDITOR_WIDTH - 16; // 16px gap
-        const availableHeight = entry.contentRect.height - MIN_TIMELINE_HEIGHT - 16; // 16px gap
-
-        // 根据比例计算最大可能的预览尺寸
-        const heightBasedWidth = availableHeight * ASPECT_RATIO;
-        const widthBasedHeight = availableWidth / ASPECT_RATIO;
-
-        let width, height;
-        if (heightBasedWidth <= availableWidth) {
-          // 高度是限制因素
-          width = heightBasedWidth;
-          height = availableHeight;
-        } else {
-          // 宽度是限制因素
-          width = availableWidth;
-          height = widthBasedHeight;
-        }
-
-        // 确保最小尺寸
-        width = Math.max(400, width);
-        height = Math.max(225, height);
-
-        setPreviewSize({ width, height });
-      }
-    });
-
-    observer.observe(mainAreaRef.current);
-    return () => observer.disconnect();
-  }, [isLoading]);
-
-  useEffect(() => {
-    // 等待应用完全就绪的策略
-    const minLoadTime = 2000; // 最少2秒（确保看到眨眼动画）
-    const startTime = Date.now();
-
-    let readyTimeout: number;
-
-    const checkAppReady = () => {
-      // 检查关键元素是否都已渲染
-      const rootElement = document.getElementById('root');
-      const hasRoot = rootElement && rootElement.children.length > 0;
-      const hasWorkbench = document.querySelector('.workbench') !== null;
-      const hasActivityBar = document.querySelector('.activity-bar') !== null;
-
-      return hasRoot && hasWorkbench && hasActivityBar;
-    };
-
-    const tryFinishLoading = () => {
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.max(0, minLoadTime - elapsed);
-
-      // 检查应用是否真的就绪
-      if (checkAppReady()) {
-        // 等待最小时间后再隐藏
-        setTimeout(() => {
-          // 再等一小段时间确保渲染稳定
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 300); // 额外300ms确保稳定
-        }, remaining);
-      } else {
-        // 如果还没就绪，继续等待
-        readyTimeout = window.setTimeout(tryFinishLoading, 100);
-      }
-    };
-
-    // 开始检查
-    if (document.readyState === 'complete') {
-      // 页面已加载，等待React渲染完成
-      readyTimeout = window.setTimeout(tryFinishLoading, 100);
-    } else {
-      window.addEventListener('load', () => {
-        readyTimeout = window.setTimeout(tryFinishLoading, 100);
-      });
+    if (selectedClipId) {
+      setActiveFile(null);
     }
+  }, [selectedClipId]);
 
-    return () => {
-      if (readyTimeout) {
-        clearTimeout(readyTimeout);
+  // 处理项目选择回调
+  const handleProjectReady = (context: ProjectContext) => {
+    console.log('Project selected:', context.info.name);
+    setCurrentProject(context);
+    setIsLoading(false);
+  };
+
+  // 处理文件打开
+  const handleOpenFile = async (fileHandle: FileSystemFileHandle, path: string = fileHandle.name) => {
+    try {
+      const file = await fileHandle.getFile();
+
+      const isMedia = file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/');
+
+      let content = null;
+      let blobUrl = undefined;
+
+      if (isMedia) {
+        blobUrl = URL.createObjectURL(file);
+      } else {
+        content = await file.text();
       }
-    };
-  }, []);
 
-  // Sidebar Content Logic
-  const renderSidebar = () => {
-    switch (activeTab) {
-      case 'files':
-        return <SidePanel title={t('app.activityBar.explorer')}><AssetBrowser /></SidePanel>;
-      case 'search':
-        return <SidePanel title={t('app.activityBar.search')}><div className="p-4 opacity-50 text-xs">Search not implemented</div></SidePanel>;
-      case 'git':
-        return <SidePanel title={t('app.activityBar.git')}><div className="p-4 opacity-50 text-xs">Git not implemented</div></SidePanel>;
-      case 'extensions':
-        return <SidePanel title={t('app.activityBar.extensions')}><div className="p-4 opacity-50 text-xs">Extensions not implemented</div></SidePanel>;
-      default:
-        return <SidePanel title={t('app.activityBar.explorer')}><AssetBrowser /></SidePanel>;
+      setActiveFile({
+        name: fileHandle.name,
+        path,
+        content,
+        handle: fileHandle,
+        blobUrl
+      });
+    } catch (err) {
+      console.error('Failed to read file:', err);
     }
   };
+
+  // 处理文件内容变化
+  const handleFileChange = (newContent: string) => {
+    setActiveFile(prev => prev ? { ...prev, content: newContent } : null);
+
+    // Sync Timeline if editing .lf config file
+    if (activeFile?.name.endsWith('.lf')) {
+      try {
+        const data = JSON.parse(newContent);
+        // Only update if looks valid
+        if (Array.isArray(data.tracks)) {
+          useTimelineStore.setState({
+            tracks: data.tracks,
+            duration: data.duration ?? 30000,
+            fps: data.fps ?? 30
+          });
+        }
+      } catch (e) {
+        // Ignore parse errors while typing
+      }
+    }
+  };
+
+  // 处理文件保存
+  const handleSaveFile = async () => {
+    if (!activeFile || !activeFile.handle) return;
+    try {
+      // 检查 handle 是否有 createWritable 方法 (File System Access API)
+      if (activeFile.handle.createWritable) {
+        if (activeFile.content === null) {
+          console.warn('Cannot save binary file content via text write');
+          return;
+        }
+        const writable = await activeFile.handle.createWritable();
+        await writable.write(activeFile.content);
+        await writable.close();
+        console.log('File saved locally:', activeFile.name);
+      } else {
+        console.warn('File handle does not support writing (maybe mock or readonly?)');
+      }
+    } catch (error) {
+      console.error('Failed to save file:', error);
+    }
+  };
+
+  // Custom Hook: Global Keyboard Shortcuts (Unified)
+  useGlobalShortcuts(handleSaveFile);
 
   // Context menu handler - block right-click except in allowed areas
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -154,52 +160,84 @@ function App() {
 
   // 渲染主应用
   const renderApp = () => (
-    <div onContextMenu={handleContextMenu} className="h-full w-full">
-      <Workbench
-        activityBar={<ActivityBar activeTab={activeTab} onTabChange={setActiveTab} />}
-        sidebar={renderSidebar()}
-        mainArea={
-          <div ref={mainAreaRef} className="ide-main-area">
-            {/* Top: Preview + Code Editor */}
-            <div className="ide-top-panel" style={{ height: previewSize.height }}>
-              {/* Left: Preview - 动态计算最大尺寸 */}
+    <ProjectHandleContext.Provider value={currentProject}>
+      <div onContextMenu={handleContextMenu} className="h-full w-full">
+        <Workbench
+          activityBar={<ActivityBar activeTab={activeTab} onTabChange={setActiveTab} />}
+          sidebar={
+            <SidebarContainer
+              activeTab={activeTab}
+              currentProject={currentProject}
+              onOpenFile={handleOpenFile}
+            />
+          }
+          mainArea={
+            <div ref={mainAreaRef} className="ide-main-area flex flex-col h-full gap-[var(--gap-panel)]">
+              {/* Top Row: Preview + Editor (Code/Properties) */}
               <div
-                className="ide-preview-area"
-                style={{
-                  width: previewSize.width,
-                  height: previewSize.height,
-                  flexShrink: 0
-                }}
+                className="flex w-full overflow-hidden"
+                style={{ height: previewSize.height, flexShrink: 0, gap: 'var(--gap-panel)' }}
               >
-                <PreviewPlayer />
+                {/* Left: Preview - Strict Aspect Ratio */}
+                <div
+                  className="ide-preview-area"
+                  style={{
+                    width: previewSize.width, // Derived from height * aspect ratio
+                    height: '100%',
+                    flexShrink: 0
+                  }}
+                >
+                  <PreviewPlayer />
+                </div>
+
+                {/* Right: Editor Container (Code + Properties) - Fills remaining space */}
+                <div className="flex-1 min-w-[var(--min-code-editor-width)] overflow-hidden">
+                  <EditorContainer
+                    externalContent={activeFile ? {
+                      ...activeFile,
+                      onChange: handleFileChange
+                    } : null}
+                    onSave={handleSaveFile}
+                  />
+                </div>
               </div>
 
-              {/* Right: Code Editor - 弹性填充剩余空间 */}
-              <div className="ide-code-editor-area" style={{ flex: 1, minWidth: MIN_CODE_EDITOR_WIDTH }}>
-                <CodeEditorPanel />
+              {/* Bottom Section: (TransportBar + Timeline) | Chat */}
+              <div
+                className="flex flex-1 min-h-0"
+                style={{ gap: 'var(--gap-panel)' }}
+              >
+                {/* Left Column: TransportBar + Timeline */}
+                <div
+                  className="flex flex-col h-full shrink-0"
+                  style={{ width: previewSize.width, gap: 'var(--gap-panel)' }}
+                >
+                  {/* Transport Bar */}
+                  <div className="shrink-0">
+                    <TransportBar />
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="ide-bottom-panel flex-1 min-h-0">
+                    <TimelineContainer />
+                  </div>
+                </div>
+
+                {/* Right Column: Chat - Fills remaining space, full height */}
+                <div className="ide-panel-section flex-1 h-full min-w-[280px]">
+                  <div className="ide-panel-header">
+                    {t('app.panels.ai')}
+                  </div>
+                  <div className="ide-panel-content relative">
+                    <AIChatWidget />
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Bottom: Timeline - 自动填满剩余空间 */}
-            <div className="ide-bottom-panel" style={{ flex: 1, minHeight: MIN_TIMELINE_HEIGHT }}>
-              <TimelineContainer />
-            </div>
-          </div>
-        }
-        rightPanel={
-          <div className="ide-right-panel">
-            <div className="ide-panel-section">
-              <div className="ide-panel-header">{t('app.panels.properties')}</div>
-              <div className="ide-panel-content"><PropertyPanel /></div>
-            </div>
-            <div className="ide-panel-section">
-              <div className="ide-panel-header">{t('app.panels.ai')}</div>
-              <div className="ide-panel-content"><AIChatWidget /></div>
-            </div>
-          </div>
-        }
-      />
-    </div>
+          }
+        />
+      </div>
+    </ProjectHandleContext.Provider>
   );
 
   // 同时渲染App和LoadingScreen，用z-index控制显示优先级
@@ -215,9 +253,9 @@ function App() {
       </div>
 
       {/* 加载屏幕（覆盖在上层） */}
-      {isLoading && <LoadingScreen />}
+      {isLoading && <LoadingScreen onProjectReady={handleProjectReady} />}
     </>
   );
 }
 
-export default App
+export default App;

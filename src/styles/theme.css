@@ -287,7 +287,6 @@ body {
 
 .ab-icon.active {
   color: var(--color-accent);
-  background: var(--color-accent-muted);
 }
 
 /* ========================================

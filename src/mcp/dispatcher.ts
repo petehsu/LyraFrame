@@ -18,6 +18,7 @@ export const dispatchAction = (action: EditorAction) => {
                     name: action.payload.name || 'New Clip',
                     start: action.payload.start,
                     duration: action.payload.duration,
+                    source: action.payload.source || action.payload.content || '',
                     content: action.payload.content,
                     properties: action.payload.properties || {}
                 });

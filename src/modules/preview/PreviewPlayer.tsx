@@ -1,10 +1,8 @@
 import { useTimelineStore } from '../../store/timelineStore';
-import { useTranslation } from 'react-i18next';
 import { ElementRenderer } from './ElementRenderer';
 
 export const PreviewPlayer = () => {
     const { tracks, currentTime } = useTimelineStore();
-    const { t } = useTranslation();
 
     /**
      * 层级渲染逻辑 (Premiere Pro 风格):
@@ -39,7 +37,15 @@ export const PreviewPlayer = () => {
                 style={{
                     position: 'absolute',
                     inset: 0,
-                    backgroundColor: '#000',
+                    backgroundColor: 'var(--color-surface)',
+                    backgroundImage: `
+                        linear-gradient(45deg, var(--color-base) 25%, transparent 25%),
+                        linear-gradient(-45deg, var(--color-base) 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, var(--color-base) 75%),
+                        linear-gradient(-45deg, transparent 75%, var(--color-base) 75%)
+                    `,
+                    backgroundSize: '20px 20px',
+                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
                     borderRadius: 'var(--radius-panel)',
                     overflow: 'hidden',
                     isolation: 'isolate',
@@ -67,19 +73,6 @@ export const PreviewPlayer = () => {
                             <ElementRenderer clip={clip} />
                         </div>
                     ))}
-                </div>
-
-                {/* Debug 信息 */}
-                <div
-                    className="absolute bottom-2 right-2 text-xs pointer-events-none px-2 py-1"
-                    style={{
-                        color: 'var(--color-text-muted)',
-                        zIndex: 9999,
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        borderRadius: 'var(--radius-sm)',
-                    }}
-                >
-                    {Math.floor(currentTime / 1000)}s | {activeClips.length} {t('preview.clips')}
                 </div>
             </div>
         </div>

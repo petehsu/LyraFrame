@@ -1,5 +1,6 @@
 import { useTimelineStore } from '../../store/timelineStore';
-import { useTranslation } from 'react-i18next';
+import { useProjectHandle } from '../../contexts/ProjectContext';
+import { createSceneFile, generateSourcePath } from '../../services/sceneService';
 import type { ClipType } from '../../store/types';
 
 interface Asset {
@@ -18,51 +19,73 @@ const MOCK_ASSETS: Asset[] = [
 ];
 
 export const AssetBrowser = () => {
-    const { addClip } = useTimelineStore();
-    const { t } = useTranslation();
+    const { addClip, currentTime, tracks } = useTimelineStore();
+    const projectContext = useProjectHandle();
 
-    const handleAddAsset = (asset: Asset) => {
-        const targetTrackId = 'track-1';
-        // 不指定 start，让 addClip 自动放在 track 末尾
-        addClip(targetTrackId, {
-            type: asset.type,
-            name: asset.name,
-            duration: 3000,
-            content: asset.content,
-            properties: {}
-        });
+    const handleDragStart = (e: React.DragEvent, asset: Asset) => {
+        // Transfer asset data as JSON
+        e.dataTransfer.setData('application/lyra-asset', JSON.stringify(asset));
+        e.dataTransfer.effectAllowed = 'copy';
+    };
+
+    const handleAddAsset = async (asset: Asset) => {
+        // Find the first video track, or just the first track
+        const targetTrack = tracks.find(t => t.type === 'video') || tracks[0];
+
+        if (!targetTrack) {
+            console.warn('No tracks available to add clip');
+            return;
+        }
+
+        if (!projectContext?.handle) {
+            console.warn('[AssetBrowser] No project context');
+            return;
+        }
+
+        // 对于 text/code 类型，创建场景文件
+        if (asset.type === 'text' || asset.type === 'code') {
+            const source = generateSourcePath(asset.type, asset.name);
+
+            try {
+                await createSceneFile(source, asset.content, projectContext.handle);
+                console.log(`[AssetBrowser] Created scene: ${source}`);
+
+                addClip(targetTrack.id, {
+                    type: asset.type,
+                    name: asset.name,
+                    duration: 3000,
+                    start: currentTime,
+                    source,
+                    content: asset.content,
+                    properties: {}
+                });
+            } catch (error) {
+                console.error('[AssetBrowser] Failed to create scene:', error);
+            }
+        } else {
+            // 其他类型（image/video/audio）保持原有逻辑
+            addClip(targetTrack.id, {
+                type: asset.type,
+                name: asset.name,
+                duration: 3000,
+                start: currentTime,
+                source: asset.content, // URL 作为 source
+                content: asset.content,
+                properties: {}
+            });
+        }
     };
 
     return (
         <div className="flex flex-col gap-3 h-full p-3">
-            {/* Tabs */}
-            <div className="flex gap-2">
-                <button
-                    className="modern-button"
-                    style={{ padding: '6px 14px', fontSize: 12 }}
-                >
-                    {t('app.assetBrowser.media')}
-                </button>
-                <button
-                    className="modern-button-secondary"
-                    style={{ padding: '6px 14px', fontSize: 12 }}
-                >
-                    {t('app.assetBrowser.projects')}
-                </button>
-                <button
-                    className="modern-button-secondary"
-                    style={{ padding: '6px 14px', fontSize: 12 }}
-                >
-                    {t('app.assetBrowser.effects')}
-                </button>
-            </div>
-
             {/* Asset List */}
             <div className="flex-1 flex flex-col gap-2 overflow-auto custom-scrollbar">
                 {MOCK_ASSETS.map(asset => (
                     <div
                         key={asset.id}
-                        className="ide-list-item group"
+                        className="ide-list-item group cursor-grab active:cursor-grabbing"
+                        draggable={true}
+                        onDragStart={(e) => handleDragStart(e, asset)}
                         onClick={() => handleAddAsset(asset)}
                     >
                         <div className="flex items-center justify-between mb-1">

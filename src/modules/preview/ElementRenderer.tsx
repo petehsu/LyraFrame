@@ -5,6 +5,14 @@ interface ElementRendererProps {
     clip: Clip;
 }
 
+/**
+ * 获取媒体资源的可用 URL
+ * content 现在是运行时内容（blob URL 或文件内容）
+ */
+const getMediaUrl = (clip: Clip): string => {
+    return clip.content || '';
+};
+
 export const ElementRenderer = ({ clip }: ElementRendererProps) => {
     const commonStyle: React.CSSProperties = {
         position: 'absolute',
@@ -30,7 +38,7 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
         case 'image':
             return (
                 <img
-                    src={clip.content}
+                    src={getMediaUrl(clip)}
                     alt={clip.name}
                     style={{ ...commonStyle, maxWidth: '100%', maxHeight: '100%' }}
                 />
@@ -38,7 +46,8 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
 
         case 'code':
             // 检测内容类型：HTML 还是 Canvas JavaScript
-            const isHtmlContent = clip.content.trim().startsWith('<');
+            const contentStr = clip.content || '';
+            const isHtmlContent = contentStr.trim().startsWith('<');
 
             if (isHtmlContent) {
                 // HTML/CSS 内容 - 使用 iframe 安全隔离渲染
@@ -51,7 +60,7 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
                             html, body { width: 100%; height: 100%; overflow: hidden; }
                         </style>
                     </head>
-                    <body>${clip.content}</body>
+                    <body>${contentStr}</body>
                     </html>
                 `;
                 return (
@@ -82,7 +91,7 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
                     overflow: 'hidden',
                 }}>
                     <LightRenderer
-                        content={clip.content}
+                        content={contentStr}
                         clipId={clip.id}
                     />
                 </div>
@@ -91,7 +100,7 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
         case 'video':
             return (
                 <video
-                    src={clip.content}
+                    src={getMediaUrl(clip)}
                     style={{ ...commonStyle, width: '100%' }}
                     autoPlay
                     loop
@@ -99,7 +108,17 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
                 />
             );
 
+        case 'audio':
+            return (
+                <audio
+                    src={getMediaUrl(clip)}
+                    autoPlay
+                    loop
+                />
+            );
+
         default:
             return null;
     }
 };
+

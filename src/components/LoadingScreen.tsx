@@ -1,7 +1,26 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+    createNewProject,
+    openExistingProject,
+    getRecentProjects,
+    removeFromRecentProjects,
+    formatRelativeTime,
+    type ProjectInfo,
+    type ProjectContext
+} from '../services/projectService';
+import './LoadingScreen.css';
 
-export const LoadingScreen = () => {
-    // 立即从系统检测主题，避免闪烁
+interface LoadingScreenProps {
+    onProjectReady: (project: ProjectContext) => void;
+}
+
+type Phase = 'loading' | 'ready';
+
+export const LoadingScreen = ({ onProjectReady }: LoadingScreenProps) => {
+    const { t } = useTranslation();
+
+    // 主题检测
     const getInitialTheme = () => {
         const dataTheme = document.documentElement.getAttribute('data-theme');
         if (dataTheme) {
@@ -11,88 +30,208 @@ export const LoadingScreen = () => {
     };
 
     const [isDark] = useState(getInitialTheme);
-    const [isVisible, setIsVisible] = useState(true);
+    const [phase, setPhase] = useState<Phase>('loading');
+    const [recentProjects, setRecentProjects] = useState<ProjectInfo[]>([]);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
+    // 直接显示操作按钮，无需等待
     useEffect(() => {
-        // 强制显示加载界面至少2秒（确保完成两次眨眼）
-        const minDisplayTime = 2000; // 2秒
-        const startTime = Date.now();
-
-        const handleLoadComplete = () => {
-            const elapsed = Date.now() - startTime;
-            const remaining = Math.max(0, minDisplayTime - elapsed);
-
-            setTimeout(() => {
-                // 开始淡出
-                setIsVisible(false);
-            }, remaining);
-        };
-
-        // 等待页面加载完成
-        if (document.readyState === 'complete') {
-            handleLoadComplete();
-        } else {
-            window.addEventListener('load', handleLoadComplete);
-            return () => window.removeEventListener('load', handleLoadComplete);
-        }
+        setPhase('ready');
+        setRecentProjects(getRecentProjects());
     }, []);
+
+    // 创建新项目
+    const handleCreateProject = async () => {
+        setIsProcessing(true);
+        setError(null);
+        try {
+            const context = await createNewProject();
+            if (context) {
+                onProjectReady(context);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to create project');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // 打开现有项目
+    const handleOpenProject = async () => {
+        setIsProcessing(true);
+        setError(null);
+        try {
+            const context = await openExistingProject();
+            if (context) {
+                onProjectReady(context);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to open project');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // 从最近项目列表选择
+    const handleSelectRecent = async (project: ProjectInfo) => {
+        // 因为无法持久化文件句柄，我们需要用户重新选择文件夹
+        // 作为一个友好的提示，告诉用户需要重新授权/选择
+        // TODO: 未来可以使用 IndexedDB 存储 handle
+        if (confirm(`为了安全访问文件，请重新选择项目文件夹: ${project.name}`)) {
+            handleOpenProject();
+        }
+    };
+
+    // 移除最近项目
+    const handleRemoveRecent = (e: React.MouseEvent, projectPath: string) => {
+        e.stopPropagation();
+        removeFromRecentProjects(projectPath);
+        setRecentProjects(getRecentProjects());
+    };
 
     const fillColor = isDark ? '#ffffff' : '#000000';
     const bgColor = isDark ? '#000000' : '#ffffff';
 
+    // Logo SVG
+    const LogoSVG = () => (
+        <svg width="200" height="200" viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg">
+            {/* 嘴巴 */}
+            <path
+                transform="rotate(19.5367 239.881 346.241)"
+                d="m379.58131,280.61394c15.47971,5.29329 22.93637,15.42386 24.19901,28.9064c0.54822,5.85373 -1.25986,11.79677 -5.16303,16.81643c-35.85339,46.10982 -84.39468,75.85801 -148.57623,85.08216c-44.86877,6.4485 -87.36089,-0.53672 -127.81204,-17.82749c-11.94493,-5.10585 -23.59535,-10.78023 -33.74145,-18.31582c-11.76722,-8.73967 -14.94817,-20.02721 -10.97769,-32.71652c3.89192,-12.43822 13.91181,-19.57797 28.19304,-22.36687c10.37143,-2.02539 19.85203,0.31144 28.35819,5.47431c17.95314,10.8968 37.52979,18.52098 59.15932,21.87227c36.04518,5.58488 69.33671,-0.83484 100.19554,-17.55616c17.3529,-9.40292 31.47345,-21.65355 42.84967,-36.24904c7.88626,-10.11798 18.42389,-15.45083 32.70731,-15.01258c3.54934,0.1089 6.86926,0.98532 10.60836,1.89291z"
+                fill={fillColor}
+            />
+
+            {/* 鼻子 */}
+            <path
+                transform="rotate(-38.1999 261.385 247.226)"
+                d="m299.49822,219.73383c4.22317,2.21741 6.25749,6.46121 6.60196,12.10918c0.14957,2.45219 -0.34371,4.94179 -1.40858,7.04457c-9.78151,19.31587 -23.02452,31.77769 -40.53451,35.64178c-12.24108,2.70134 -23.83377,-0.22484 -34.86963,-7.46812c-3.25881,-2.13889 -6.43727,-4.51595 -9.20533,-7.67268c-3.21033,-3.66113 -4.07815,-8.3896 -2.99493,-13.70528c1.06179,-5.2105 3.79541,-8.20141 7.69161,-9.36971c2.82953,-0.84846 5.41602,0.13047 7.73667,2.29324c4.89797,4.56478 10.23886,7.75863 16.13982,9.16252c9.83383,2.33956 18.91642,-0.34972 27.33531,-7.35445c4.73421,-3.93898 8.58657,-9.07089 11.69023,-15.18509c2.15153,-4.23852 5.0264,-6.47251 8.9232,-6.28892c0.96833,0.04562 1.87407,0.41276 2.89417,0.79296z"
+                fill={fillColor}
+            />
+
+            {/* 右眼 */}
+            <path
+                className="eye-right"
+                d="m343.82218,186.70234c-1.60677,-13.41675 -2.46566,-25.99859 1.30681,-38.31949c3.92617,-12.82275 13.67326,-20.46863 25.22973,-19.9443c12.83302,0.58231 21.00314,8.1966 24.45366,22.26784c2.48291,10.1253 2.42384,20.4228 1.21755,30.54415c-2.05733,17.26258 -11.18818,27.3231 -24.64648,28.6453c-12.87848,1.26518 -21.51279,-5.79476 -27.56127,-23.1935z"
+                fill={fillColor}
+                style={{
+                    transformOrigin: '368px 167px',
+                    animation: 'quickBlink 3s ease-in-out infinite'
+                }}
+            />
+
+            {/* 左眼 */}
+            <path
+                className="eye-left"
+                d="m122.47558,159.42965c-1.60677,-13.41675 -2.46566,-25.9986 1.30681,-38.31949c3.92618,-12.82275 13.67327,-20.46864 25.22973,-19.94431c12.83302,0.58231 21.00315,8.19661 24.45366,22.26784c2.48291,10.1253 2.42385,20.42279 1.21756,30.54414c-2.05733,17.26258 -11.18818,27.3231 -24.64648,28.6453c-12.87848,1.26518 -21.51279,-5.79475 -27.56127,-23.19349z"
+                fill={fillColor}
+                style={{
+                    transformOrigin: '147px 140px',
+                    animation: 'quickBlink 3s ease-in-out infinite'
+                }}
+            />
+        </svg>
+    );
+
     return (
         <div
-            className={`loading-screen ${!isVisible ? 'fade-out' : ''}`}
-            style={{
-                position: 'fixed',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: bgColor,
-                zIndex: 9999,
-                opacity: isVisible ? 1 : 0,
-                visibility: isVisible ? 'visible' : 'hidden',
-                transition: 'opacity 0.8s ease-out, visibility 0.8s ease-out',
-            }}
+            className="loading-screen"
+            style={{ backgroundColor: bgColor }}
         >
-            <svg width="200" height="200" viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg">
-                {/* 嘴巴（笑容）- 不动 */}
-                <path
-                    transform="rotate(19.5367 239.881 346.241)"
-                    d="m379.58131,280.61394c15.47971,5.29329 22.93637,15.42386 24.19901,28.9064c0.54822,5.85373 -1.25986,11.79677 -5.16303,16.81643c-35.85339,46.10982 -84.39468,75.85801 -148.57623,85.08216c-44.86877,6.4485 -87.36089,-0.53672 -127.81204,-17.82749c-11.94493,-5.10585 -23.59535,-10.78023 -33.74145,-18.31582c-11.76722,-8.73967 -14.94817,-20.02721 -10.97769,-32.71652c3.89192,-12.43822 13.91181,-19.57797 28.19304,-22.36687c10.37143,-2.02539 19.85203,0.31144 28.35819,5.47431c17.95314,10.8968 37.52979,18.52098 59.15932,21.87227c36.04518,5.58488 69.33671,-0.83484 100.19554,-17.55616c17.3529,-9.40292 31.47345,-21.65355 42.84967,-36.24904c7.88626,-10.11798 18.42389,-15.45083 32.70731,-15.01258c3.54934,0.1089 6.86926,0.98532 10.60836,1.89291z"
-                    fill={fillColor}
-                />
+            {/* 左侧 Logo 区域 */}
+            <div className="loading-screen__logo-section">
+                <LogoSVG />
+                <h1 className="loading-screen__title" style={{ color: fillColor }}>
+                    LyraFrame
+                </h1>
+                <p className="loading-screen__tagline" style={{ color: isDark ? '#888' : '#666' }}>
+                    Code-driven video creation
+                </p>
+            </div>
 
-                {/* 鼻子 - 不动 */}
-                <path
-                    transform="rotate(-38.1999 261.385 247.226)"
-                    d="m299.49822,219.73383c4.22317,2.21741 6.25749,6.46121 6.60196,12.10918c0.14957,2.45219 -0.34371,4.94179 -1.40858,7.04457c-9.78151,19.31587 -23.02452,31.77769 -40.53451,35.64178c-12.24108,2.70134 -23.83377,-0.22484 -34.86963,-7.46812c-3.25881,-2.13889 -6.43727,-4.51595 -9.20533,-7.67268c-3.21033,-3.66113 -4.07815,-8.3896 -2.99493,-13.70528c1.06179,-5.2105 3.79541,-8.20141 7.69161,-9.36971c2.82953,-0.84846 5.41602,0.13047 7.73667,2.29324c4.89797,4.56478 10.23886,7.75863 16.13982,9.16252c9.83383,2.33956 18.91642,-0.34972 27.33531,-7.35445c4.73421,-3.93898 8.58657,-9.07089 11.69023,-15.18509c2.15153,-4.23852 5.0264,-6.47251 8.9232,-6.28892c0.96833,0.04562 1.87407,0.41276 2.89417,0.79296z"
-                    fill={fillColor}
-                />
+            {/* 右侧操作区域 */}
+            <div className={`loading-screen__action-section ${phase === 'ready' ? 'visible' : ''}`}>
+                {phase === 'loading' ? (
+                    <div className="loading-screen__loading">
+                        <div className="loading-spinner" style={{ borderTopColor: fillColor }}></div>
+                        <span style={{ color: isDark ? '#888' : '#666' }}>Loading...</span>
+                    </div>
+                ) : (
+                    <>
+                        {/* 主按钮区域 */}
+                        <div className="loading-screen__buttons">
+                            <button
+                                className="loading-screen__btn loading-screen__btn--primary"
+                                onClick={handleCreateProject}
+                                disabled={isProcessing}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                {t('projectManager.createNew')}
+                            </button>
+                            <button
+                                className="loading-screen__btn loading-screen__btn--secondary"
+                                onClick={handleOpenProject}
+                                disabled={isProcessing}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                </svg>
+                                {t('projectManager.openExisting')}
+                            </button>
+                        </div>
 
-                {/* 右眼 - 快速眨眼动画（2秒内眨2次） */}
-                <path
-                    className="eye-right"
-                    d="m343.82218,186.70234c-1.60677,-13.41675 -2.46566,-25.99859 1.30681,-38.31949c3.92617,-12.82275 13.67326,-20.46863 25.22973,-19.9443c12.83302,0.58231 21.00314,8.1966 24.45366,22.26784c2.48291,10.1253 2.42384,20.4228 1.21755,30.54415c-2.05733,17.26258 -11.18818,27.3231 -24.64648,28.6453c-12.87848,1.26518 -21.51279,-5.79476 -27.56127,-23.1935z"
-                    fill={fillColor}
-                    style={{
-                        transformOrigin: '368px 167px',
-                        animation: 'quickBlink 2s ease-in-out 1' // 2秒完成，只播放1次
-                    }}
-                />
+                        {/* 错误提示 */}
+                        {error && (
+                            <div className="loading-screen__error">
+                                {error}
+                            </div>
+                        )}
 
-                {/* 左眼 - 快速眨眼动画（2秒内眨2次） */}
-                <path
-                    className="eye-left"
-                    d="m122.47558,159.42965c-1.60677,-13.41675 -2.46566,-25.9986 1.30681,-38.31949c3.92618,-12.82275 13.67327,-20.46864 25.22973,-19.94431c12.83302,0.58231 21.00315,8.19661 24.45366,22.26784c2.48291,10.1253 2.42385,20.42279 1.21756,30.54414c-2.05733,17.26258 -11.18818,27.3231 -24.64648,28.6453c-12.87848,1.26518 -21.51279,-5.79475 -27.56127,-23.19349z"
-                    fill={fillColor}
-                    style={{
-                        transformOrigin: '147px 140px',
-                        animation: 'quickBlink 2s ease-in-out 1' // 2秒完成，只播放1次
-                    }}
-                />
-            </svg>
+                        {/* 最近项目列表 */}
+                        {recentProjects.length > 0 && (
+                            <div className="loading-screen__recent">
+                                <h3 className="loading-screen__recent-title" style={{ color: isDark ? '#888' : '#666' }}>
+                                    {t('projectManager.recentProjects')}
+                                </h3>
+                                <ul className="loading-screen__recent-list">
+                                    {recentProjects.slice(0, 5).map((project) => (
+                                        <li
+                                            key={project.path}
+                                            className="loading-screen__recent-item"
+                                            onClick={() => handleSelectRecent(project)}
+                                        >
+                                            <div className="loading-screen__recent-info">
+                                                <span className="loading-screen__recent-name">{project.name}</span>
+                                                <span className="loading-screen__recent-path">{project.path}</span>
+                                            </div>
+                                            <div className="loading-screen__recent-meta">
+                                                <span className="loading-screen__recent-time">
+                                                    {formatRelativeTime(project.lastOpened)}
+                                                </span>
+                                                <button
+                                                    className="loading-screen__recent-remove"
+                                                    onClick={(e) => handleRemoveRecent(e, project.path)}
+                                                    title={t('projectManager.remove')}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* 版本信息 */}
+                        <div className="loading-screen__version" style={{ color: isDark ? '#555' : '#aaa' }}>
+                            v0.1.0-alpha
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import { Files, Search, GitGraph, Box } from 'lucide-react';
+import { FolderOpen, Search, GitGraph, Box } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Logo } from '../Logo';
 
@@ -21,7 +21,7 @@ export const ActivityBar = ({ activeTab, onTabChange }: ActivityBarProps) => {
                 onClick={() => onTabChange('files')}
                 title={t('app.activityBar.explorer')}
             >
-                <Files size={24} strokeWidth={1.5} />
+                <FolderOpen size={24} strokeWidth={1.5} />
             </div>
             <div
                 className={`ab-icon ${activeTab === 'search' ? 'active' : ''}`}

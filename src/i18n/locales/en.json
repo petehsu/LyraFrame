@@ -1,11 +1,20 @@
 {
+    "timeline": {
+        "track": "Track"
+    },
     "app": {
         "title": "LyraFrame",
         "activityBar": {
-            "explorer": "Explorer",
+            "explorer": "Project",
             "search": "Search",
             "git": "Source Control",
-            "extensions": "Extensions"
+            "extensions": "Extensions",
+            "assets": "Assets"
+        },
+        "placeholders": {
+            "searchNotImplemented": "Search not implemented",
+            "gitNotImplemented": "Git not implemented",
+            "extensionsComingSoon": "Extensions coming soon"
         },
         "panels": {
             "assets": "Assets",
@@ -14,8 +23,8 @@
             "ai": "Lyra AI"
         },
         "assetBrowser": {
-            "media": "Media",
-            "projects": "Projects",
+            "media": "Assets",
+            "projects": "Code",
             "effects": "Effects"
         }
     },
@@ -24,5 +33,17 @@
     },
     "preview": {
         "clips": "clips"
+    },
+    "projectManager": {
+        "subtitle": "Code-Driven Video Creation",
+        "createNew": "New Project",
+        "openExisting": "Open Project",
+        "recentProjects": "Recent Projects",
+        "noRecentProjects": "No recent projects",
+        "remove": "Remove"
+    },
+    "sidebar": {
+        "projectFiles": "Project Files",
+        "assetLibrary": "Asset Library"
     }
 }
