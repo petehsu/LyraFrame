@@ -1,6 +1,7 @@
 {
     "timeline": {
-        "track": "Track"
+        "track": "Track",
+        "clips": "Clips"
     },
     "app": {
         "title": "LyraFrame",
@@ -9,7 +10,8 @@
             "search": "Search",
             "git": "Source Control",
             "extensions": "Extensions",
-            "assets": "Assets"
+            "assets": "Assets",
+            "settings": "Settings"
         },
         "placeholders": {
             "searchNotImplemented": "Search not implemented",
@@ -26,6 +28,9 @@
             "media": "Assets",
             "projects": "Code",
             "effects": "Effects"
+        },
+        "editor": {
+            "code": "Code"
         }
     },
     "editor": {
@@ -45,5 +50,93 @@
     "sidebar": {
         "projectFiles": "Project Files",
         "assetLibrary": "Asset Library"
+    },
+    "settings": {
+        "language": "Language"
+    },
+    "properties": {
+        "noClipSelected": "No Clip Selected",
+        "name": "Name",
+        "start": "Start (ms)",
+        "duration": "Duration (ms)",
+        "textProperties": "Text Properties",
+        "text": "Text",
+        "color": "Color",
+        "fontSize": "Font Size",
+        "fontWeight": "Font Weight",
+        "textAlign": "Text Align",
+        "textEffect": "Text Effect",
+        "fontSizeOptions": {
+            "small": "Small",
+            "medium": "Medium",
+            "large": "Large",
+            "xlarge": "X-Large",
+            "xxlarge": "XX-Large",
+            "huge": "Huge"
+        },
+        "fontWeightOptions": {
+            "normal": "Normal",
+            "medium": "Medium",
+            "semibold": "Semi Bold",
+            "bold": "Bold",
+            "extrabold": "Extra Bold"
+        },
+        "textAlignOptions": {
+            "left": "Left",
+            "center": "Center",
+            "right": "Right"
+        },
+        "effectGroups": {
+            "none": "None",
+            "shadow": "Shadow",
+            "glowSoft": "Glow - Soft",
+            "glowStrong": "Glow - Strong",
+            "glowIntense": "Glow - Intense",
+            "neon": "Neon"
+        },
+        "effects": {
+            "none": "None",
+            "softShadow": "Soft Shadow",
+            "strongShadow": "Strong Shadow",
+            "deepShadow": "Deep Shadow",
+            "whiteSoft": "White Soft",
+            "pinkSoft": "Pink Soft",
+            "blueSoft": "Blue Soft",
+            "greenSoft": "Green Soft",
+            "yellowSoft": "Yellow Soft",
+            "purpleSoft": "Purple Soft",
+            "whiteStrong": "White Strong",
+            "pinkStrong": "Pink Strong",
+            "blueStrong": "Blue Strong",
+            "greenStrong": "Green Strong",
+            "yellowStrong": "Yellow Strong",
+            "purpleStrong": "Purple Strong",
+            "whiteIntense": "White Intense",
+            "pinkIntense": "Pink Intense",
+            "blueIntense": "Blue Intense",
+            "greenIntense": "Green Intense",
+            "yellowIntense": "Yellow Intense",
+            "purpleIntense": "Purple Intense",
+            "neonPink": "Neon Pink",
+            "neonCyan": "Neon Cyan",
+            "neonGreen": "Neon Green"
+        }
+    },
+    "assets": {
+        "titleText": "Title Text",
+        "titleTextDesc": "Styled text with glow effect",
+        "gradientBg": "Gradient BG",
+        "gradientBgDesc": "CSS Gradient",
+        "logoPlaceholder": "Logo Placeholder",
+        "logoPlaceholderDesc": "300x300 Image",
+        "pulseCircle": "Pulse Circle",
+        "pulseCircleDesc": "CSS Animation",
+        "subtitleText": "Subtitle Text",
+        "subtitleTextDesc": "Bottom subtitle overlay",
+        "animatedTitle": "Animated Title",
+        "animatedTitleDesc": "Title with fade-in animation"
+    },
+    "transport": {
+        "clips": "Clips"
     }
 }

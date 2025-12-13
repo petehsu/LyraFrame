@@ -27,9 +27,12 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
             return (
                 <div style={{
                     ...commonStyle,
-                    color: 'var(--color-text-primary)',
-                    fontSize: '2em',
-                    fontFamily: 'var(--font-sans)'
+                    color: clip.properties.style?.color || 'var(--color-text-primary)',
+                    fontSize: clip.properties.style?.fontSize || '2em',
+                    fontWeight: clip.properties.style?.fontWeight || 'normal',
+                    fontFamily: clip.properties.style?.fontFamily || 'var(--font-sans)',
+                    textAlign: clip.properties.style?.textAlign || 'center',
+                    textShadow: clip.properties.style?.textShadow || 'none',
                 }}>
                     {clip.content}
                 </div>
@@ -47,35 +50,21 @@ export const ElementRenderer = ({ clip }: ElementRendererProps) => {
         case 'code':
             // 检测内容类型：HTML 还是 Canvas JavaScript
             const contentStr = clip.content || '';
-            const isHtmlContent = contentStr.trim().startsWith('<');
+            const isHtmlContent = contentStr.trim().startsWith('<') || contentStr.includes('<!--');
 
             if (isHtmlContent) {
-                // HTML/CSS 内容 - 使用 iframe 安全隔离渲染
-                const htmlDoc = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <style>
-                            * { margin: 0; padding: 0; box-sizing: border-box; }
-                            html, body { width: 100%; height: 100%; overflow: hidden; }
-                        </style>
-                    </head>
-                    <body>${contentStr}</body>
-                    </html>
-                `;
+                // HTML/CSS 内容 - 直接渲染，透明背景，更快更流畅
                 return (
-                    <iframe
-                        srcDoc={htmlDoc}
+                    <div
                         style={{
                             position: 'absolute',
                             inset: 0,
                             width: '100%',
                             height: '100%',
-                            border: 'none',
+                            overflow: 'hidden',
                             pointerEvents: 'none',
                         }}
-                        sandbox="allow-scripts"
-                        title={clip.name}
+                        dangerouslySetInnerHTML={{ __html: contentStr }}
                     />
                 );
             }

@@ -121,7 +121,7 @@ export const CodeEditorPanel = ({ externalContent, onSave }: CodeEditorPanelProp
         if (!selectedClip) return 'plaintext';
         switch (selectedClip.type) {
             case 'code': return 'html'; // HTML 包含 CSS 和 JS
-            case 'text': return 'plaintext';
+            case 'text': return 'html'; // 文字也是代码驱动
             default: return 'plaintext';
         }
     };

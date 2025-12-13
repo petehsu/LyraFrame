@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n/config';
 import { SidePanel } from './SidePanel';
 import { FileExplorer } from '../../modules/explorer/FileExplorer';
 import { AssetBrowser } from '../../modules/assets/AssetBrowser';
+import { OptionSelector } from '../ui/OptionSelector';
 import type { ProjectContext } from '../../services/projectService';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Globe } from 'lucide-react';
 
 interface SidebarContainerProps {
     activeTab: string;
@@ -97,6 +99,36 @@ export const SidebarContainer = ({ activeTab, currentProject, onOpenFile }: Side
                 <SidePanel title={t('app.activityBar.extensions')}>
                     <div className="p-4 opacity-50 text-xs text-center">
                         {t('app.placeholders.extensionsComingSoon')}
+                    </div>
+                </SidePanel>
+            );
+        case 'settings':
+            return (
+                <SidePanel title={t('app.activityBar.settings')}>
+                    <div className="flex flex-col gap-4 p-3">
+                        {/* Language Setting */}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2">
+                                <Globe size={16} style={{ color: 'var(--color-text-muted)' }} />
+                                <label
+                                    className="text-xs uppercase font-semibold"
+                                    style={{ color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}
+                                >
+                                    {t('settings.language')}
+                                </label>
+                            </div>
+                            <OptionSelector
+                                value={i18n.language}
+                                options={[
+                                    { value: 'zh', label: '中文' },
+                                    { value: 'en', label: 'English' }
+                                ]}
+                                onChange={(value) => {
+                                    i18n.changeLanguage(value);
+                                    localStorage.setItem('lyraframe-language', value);
+                                }}
+                            />
+                        </div>
                     </div>
                 </SidePanel>
             );

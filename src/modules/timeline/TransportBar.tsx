@@ -1,6 +1,8 @@
 import { useTimelineStore } from '../../store/timelineStore';
+import { useTranslation } from 'react-i18next';
 
 export const TransportBar = () => {
+    const { t } = useTranslation();
     const {
         currentTime,
         duration,
@@ -84,7 +86,7 @@ export const TransportBar = () => {
                     className="flex items-center gap-2 px-2 py-1 rounded-sm"
                     style={{ backgroundColor: 'var(--color-bg-base)' }}
                 >
-                    <span style={{ color: 'var(--color-text-muted)' }}>Clips:</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>{t('transport.clips')}:</span>
                     <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>{totalClips}</span>
                 </div>
 

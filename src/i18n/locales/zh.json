@@ -1,6 +1,7 @@
 {
     "timeline": {
-        "track": "轨道"
+        "track": "轨道",
+        "clips": "片段"
     },
     "app": {
         "title": "LyraFrame",
@@ -9,7 +10,8 @@
             "search": "搜索",
             "git": "源代码管理",
             "extensions": "扩展",
-            "assets": "素材库"
+            "assets": "素材库",
+            "settings": "设置"
         },
         "placeholders": {
             "searchNotImplemented": "搜索功能尚未实现",
@@ -26,6 +28,9 @@
             "media": "素材",
             "projects": "代码",
             "effects": "效果"
+        },
+        "editor": {
+            "code": "代码"
         }
     },
     "editor": {
@@ -45,5 +50,93 @@
     "sidebar": {
         "projectFiles": "项目文件",
         "assetLibrary": "素材库"
+    },
+    "settings": {
+        "language": "语言"
+    },
+    "properties": {
+        "noClipSelected": "未选择片段",
+        "name": "名称",
+        "start": "开始 (毫秒)",
+        "duration": "时长 (毫秒)",
+        "textProperties": "文字属性",
+        "text": "文字",
+        "color": "颜色",
+        "fontSize": "字体大小",
+        "fontWeight": "字体粗细",
+        "textAlign": "文字对齐",
+        "textEffect": "文字效果",
+        "fontSizeOptions": {
+            "small": "小",
+            "medium": "中",
+            "large": "大",
+            "xlarge": "特大",
+            "xxlarge": "超大",
+            "huge": "巨大"
+        },
+        "fontWeightOptions": {
+            "normal": "常规",
+            "medium": "中等",
+            "semibold": "半粗",
+            "bold": "粗体",
+            "extrabold": "特粗"
+        },
+        "textAlignOptions": {
+            "left": "左对齐",
+            "center": "居中",
+            "right": "右对齐"
+        },
+        "effectGroups": {
+            "none": "无",
+            "shadow": "阴影",
+            "glowSoft": "发光 - 柔和",
+            "glowStrong": "发光 - 强",
+            "glowIntense": "发光 - 超强",
+            "neon": "霓虹"
+        },
+        "effects": {
+            "none": "无",
+            "softShadow": "柔和阴影",
+            "strongShadow": "强阴影",
+            "deepShadow": "深阴影",
+            "whiteSoft": "白色柔和",
+            "pinkSoft": "粉色柔和",
+            "blueSoft": "蓝色柔和",
+            "greenSoft": "绿色柔和",
+            "yellowSoft": "黄色柔和",
+            "purpleSoft": "紫色柔和",
+            "whiteStrong": "白色强",
+            "pinkStrong": "粉色强",
+            "blueStrong": "蓝色强",
+            "greenStrong": "绿色强",
+            "yellowStrong": "黄色强",
+            "purpleStrong": "紫色强",
+            "whiteIntense": "白色超强",
+            "pinkIntense": "粉色超强",
+            "blueIntense": "蓝色超强",
+            "greenIntense": "绿色超强",
+            "yellowIntense": "黄色超强",
+            "purpleIntense": "紫色超强",
+            "neonPink": "霓虹粉",
+            "neonCyan": "霓虹青",
+            "neonGreen": "霓虹绿"
+        }
+    },
+    "assets": {
+        "titleText": "标题文字",
+        "titleTextDesc": "带发光效果的文字",
+        "gradientBg": "渐变背景",
+        "gradientBgDesc": "CSS 渐变",
+        "logoPlaceholder": "Logo 占位",
+        "logoPlaceholderDesc": "300x300 图片",
+        "pulseCircle": "脉冲圆圈",
+        "pulseCircleDesc": "CSS 动画",
+        "subtitleText": "字幕文字",
+        "subtitleTextDesc": "底部字幕叠加",
+        "animatedTitle": "动画标题",
+        "animatedTitleDesc": "带淡入动画的标题"
+    },
+    "transport": {
+        "clips": "片段"
     }
 }

@@ -1,4 +1,4 @@
-import { FolderOpen, Search, GitGraph, Box } from 'lucide-react';
+import { FolderOpen, Search, GitGraph, Box, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Logo } from '../Logo';
 
@@ -43,6 +43,13 @@ export const ActivityBar = ({ activeTab, onTabChange }: ActivityBarProps) => {
                 title={t('app.activityBar.extensions')}
             >
                 <Box size={24} strokeWidth={1.5} />
+            </div>
+            <div
+                className={`ab-icon ${activeTab === 'settings' ? 'active' : ''}`}
+                onClick={() => onTabChange('settings')}
+                title={t('app.activityBar.settings')}
+            >
+                <Settings size={24} strokeWidth={1.5} />
             </div>
         </div>
     );

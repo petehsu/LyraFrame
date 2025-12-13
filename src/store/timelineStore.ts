@@ -61,19 +61,31 @@ const INITIAL_STATE: ProjectState = {
                 {
                     id: 'clip-demo-1',
                     trackId: 'track-1',
-                    type: 'text',
-                    name: 'Demo Title',
+                    type: 'code',
+                    name: 'Title Text',
                     start: 0,
                     duration: 5000,
-                    source: 'scenes/demo_title.tsx',
-                    content: 'LyraFrame 1.0', // 运行时内容
-                    properties: {
-                        style: {
-                            fontSize: '3rem',
-                            fontWeight: 'bold',
-                            textShadow: '0 0 20px var(--color-primary)'
-                        }
-                    }
+                    source: 'scenes/title_text.tsx',
+                    content: `<!-- LyraFrame Text Element -->
+<div class="lyra-text" style="
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+">
+  <h1 style="
+    color: #ffffff;
+    font-size: 4rem;
+    font-weight: bold;
+    font-family: system-ui, -apple-system, sans-serif;
+    text-align: center;
+    text-shadow: 0 0 20px rgba(244, 114, 182, 0.8);
+    margin: 0;
+    padding: 0 2rem;
+  ">LyraFrame</h1>
+</div>`,
+                    properties: {}
                 },
                 {
                     id: 'clip-demo-2',
