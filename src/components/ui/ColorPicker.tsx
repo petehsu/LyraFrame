@@ -51,16 +51,16 @@ const hslToRgb = (h: number, s: number, l: number): { r: number; g: number; b: n
         const hue2rgb = (p: number, q: number, t: number) => {
             if (t < 0) t += 1;
             if (t > 1) t -= 1;
-            if (t < 1/6) return p + (q - p) * 6 * t;
-            if (t < 1/2) return q;
-            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
             return p;
         };
         const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
+        r = hue2rgb(p, q, h + 1 / 3);
         g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
+        b = hue2rgb(p, q, h - 1 / 3);
     }
     return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
 };
@@ -131,13 +131,130 @@ const oklchToRgb = (l: number, c: number, h: number): { r: number; g: number; b:
     const lg = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
     const lb = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3;
     const toSrgb = (c: number) => {
-        const v = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1/2.4) - 0.055;
+        const v = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
         return Math.max(0, Math.min(255, Math.round(v * 255)));
     };
     return { r: toSrgb(lr), g: toSrgb(lg), b: toSrgb(lb) };
 };
 
+// 生成和谐配色方案
+const generatePalette = (h: number, s: number, l: number): { h: number; s: number; l: number; label: string }[] => {
+    const normalizeHue = (hue: number) => ((hue % 360) + 360) % 360;
+
+    return [
+        // 互补色 - 色相偏移 180°
+        { h: normalizeHue(h + 180), s, l, label: '互补' },
+        // 类似色 - 色相偏移 +30°
+        { h: normalizeHue(h + 30), s, l, label: '类似' },
+        // 类似色 - 色相偏移 -30°
+        { h: normalizeHue(h - 30), s, l, label: '类似' },
+        // 三元色 - 色相偏移 +120°
+        { h: normalizeHue(h + 120), s, l, label: '三元' },
+        // 三元色 - 色相偏移 -120°
+        { h: normalizeHue(h - 120), s, l, label: '三元' },
+        // 更亮变体
+        { h, s, l: Math.min(l + 20, 95), label: '亮' },
+        // 更暗变体
+        { h, s, l: Math.max(l - 20, 5), label: '暗' },
+        // 低饱和度
+        { h, s: Math.max(s - 30, 10), l, label: '柔和' },
+    ];
+};
+
+interface ColorPaletteProps {
+    hue: number;
+    saturation: number;
+    lightness: number;
+    onSelect: (h: number, s: number, l: number) => void;
+}
+
+const ColorPalette = ({ hue, saturation, lightness, onSelect }: ColorPaletteProps) => {
+    const palette = generatePalette(hue, saturation, lightness);
+
+    return (
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+        }}>
+            <div style={{
+                fontSize: '10px',
+                color: 'var(--color-text-muted)',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+            }}>
+                推荐
+            </div>
+            <div style={{
+                display: 'flex',
+                gap: '4px',
+                flex: 1,
+            }}>
+                {palette.map((color, index) => {
+                    const rgb = hslToRgb(color.h, color.s, color.l);
+                    const colorHex = rgbToHex(rgb.r, rgb.g, rgb.b);
+
+                    return (
+                        <button
+                            key={index}
+                            onClick={() => onSelect(color.h, color.s, color.l)}
+                            title={`${color.label}: ${colorHex}`}
+                            style={{
+                                width: '24px',
+                                height: '24px',
+                                flexShrink: 0,
+                                background: colorHex,
+                                border: '2px solid var(--color-border)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                transition: 'transform 0.15s, border-color 0.15s, box-shadow 0.15s',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.15)';
+                                e.currentTarget.style.borderColor = 'var(--color-accent)';
+                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)';
+                                e.currentTarget.style.zIndex = '1';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.borderColor = 'var(--color-border)';
+                                e.currentTarget.style.boxShadow = 'none';
+                                e.currentTarget.style.zIndex = '0';
+                            }}
+                        />
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 type ColorMode = 'hex' | 'rgb' | 'hsl' | 'hsv' | 'oklch';
+
+// 解析颜色值（支持 HEX、RGBA、HSLA）
+const parseColorValue = (color: string): { r: number; g: number; b: number; a: number } => {
+    // 匹配 rgba(r, g, b, a)
+    const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (rgbaMatch) {
+        return {
+            r: parseInt(rgbaMatch[1]),
+            g: parseInt(rgbaMatch[2]),
+            b: parseInt(rgbaMatch[3]),
+            a: rgbaMatch[4] ? parseFloat(rgbaMatch[4]) : 1,
+        };
+    }
+    // 匹配 #RRGGBBAA 或 #RRGGBB
+    const hexMatch = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
+    if (hexMatch) {
+        return {
+            r: parseInt(hexMatch[1], 16),
+            g: parseInt(hexMatch[2], 16),
+            b: parseInt(hexMatch[3], 16),
+            a: hexMatch[4] ? parseInt(hexMatch[4], 16) / 255 : 1,
+        };
+    }
+    return { r: 255, g: 255, b: 255, a: 1 };
+};
 
 export const ColorPicker = ({ value, onChange }: ColorPickerProps) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -145,15 +262,17 @@ export const ColorPicker = ({ value, onChange }: ColorPickerProps) => {
     const [hue, setHue] = useState(0);
     const [saturation, setSaturation] = useState(100);
     const [lightness, setLightness] = useState(50);
+    const [alpha, setAlpha] = useState(1);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // 从外部值初始化
     useEffect(() => {
-        const rgb = hexToRgb(value);
-        const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+        const parsed = parseColorValue(value);
+        const hsl = rgbToHsl(parsed.r, parsed.g, parsed.b);
         setHue(hsl.h);
         setSaturation(hsl.s || 100);
         setLightness(hsl.l || 50);
+        setAlpha(parsed.a);
     }, [value]);
 
     // 点击外部关闭
@@ -174,17 +293,31 @@ export const ColorPicker = ({ value, onChange }: ColorPickerProps) => {
     const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
     const oklch = rgbToOklch(rgb.r, rgb.g, rgb.b);
 
-    const updateColor = (h: number, s: number, l: number) => {
+    const updateColor = (h: number, s: number, l: number, a: number = alpha) => {
         setHue(h);
         setSaturation(s);
         setLightness(l);
+        setAlpha(a);
         const newRgb = hslToRgb(h, s, l);
-        onChange(rgbToHex(newRgb.r, newRgb.g, newRgb.b));
+        if (a < 1) {
+            onChange(`rgba(${newRgb.r}, ${newRgb.g}, ${newRgb.b}, ${a})`);
+        } else {
+            onChange(rgbToHex(newRgb.r, newRgb.g, newRgb.b));
+        }
+    };
+
+    const updateAlpha = (a: number) => {
+        setAlpha(a);
+        if (a < 1) {
+            onChange(`rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${a})`);
+        } else {
+            onChange(hex);
+        }
     };
 
     const updateFromRgb = (newRgb: { r: number; g: number; b: number }) => {
         const newHsl = rgbToHsl(newRgb.r, newRgb.g, newRgb.b);
-        updateColor(newHsl.h, newHsl.s || saturation, newHsl.l || lightness);
+        updateColor(newHsl.h, newHsl.s || saturation, newHsl.l || lightness, alpha);
     };
 
     const modes: { key: ColorMode; label: string }[] = [
@@ -220,11 +353,22 @@ export const ColorPicker = ({ value, onChange }: ColorPickerProps) => {
                 style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', cursor: 'pointer' }}
             >
                 <div style={{
+                    position: 'relative',
                     width: '24px', height: '24px', borderRadius: '6px',
-                    background: hex, border: '2px solid var(--color-border)', flexShrink: 0,
-                }} />
+                    border: '2px solid var(--color-border)', flexShrink: 0,
+                    overflow: 'hidden',
+                }}>
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        background: `repeating-conic-gradient(#808080 0% 25%, #c0c0c0 0% 50%) 50% / 8px 8px`,
+                    }} />
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        background: alpha < 1 ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})` : hex,
+                    }} />
+                </div>
                 <span style={{ flex: 1, fontFamily: 'monospace', textTransform: 'uppercase', color: 'var(--color-text-primary)', fontSize: '12px' }}>
-                    {hex}
+                    {alpha < 1 ? `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha.toFixed(2)})` : hex}
                 </span>
                 <ChevronDown size={16} style={{
                     color: 'var(--color-text-muted)',
@@ -237,7 +381,29 @@ export const ColorPicker = ({ value, onChange }: ColorPickerProps) => {
             {isOpen && (
                 <div style={{ padding: '12px', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {/* 颜色预览 */}
-                    <div style={{ width: '100%', height: '32px', borderRadius: '6px', background: hex, border: '1px solid var(--color-border)' }} />
+                    <div style={{
+                        position: 'relative',
+                        width: '100%', height: '32px', borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        overflow: 'hidden',
+                    }}>
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            background: `repeating-conic-gradient(#808080 0% 25%, #c0c0c0 0% 50%) 50% / 12px 12px`,
+                        }} />
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            background: alpha < 1 ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})` : hex,
+                        }} />
+                    </div>
+
+                    {/* 色卡推荐 */}
+                    <ColorPalette
+                        hue={hue}
+                        saturation={saturation}
+                        lightness={lightness}
+                        onSelect={(h, s, l) => updateColor(h, s, l)}
+                    />
 
                     {/* 色相滑块 - 使用原生 input range */}
                     <input
@@ -295,6 +461,34 @@ export const ColorPicker = ({ value, onChange }: ColorPickerProps) => {
                             cursor: 'pointer',
                         }}
                     />
+
+                    {/* 透明度滑块 */}
+                    <div style={{ position: 'relative' }}>
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            borderRadius: '7px',
+                            background: `repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 10px 10px`,
+                        }} />
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={Math.round(alpha * 100)}
+                            onChange={(e) => updateAlpha(parseInt(e.target.value) / 100)}
+                            style={{
+                                position: 'relative',
+                                width: '100%',
+                                height: '14px',
+                                WebkitAppearance: 'none',
+                                appearance: 'none',
+                                background: `linear-gradient(to right, transparent, hsl(${hue}, ${saturation}%, ${lightness}%))`,
+                                borderRadius: '7px',
+                                outline: 'none',
+                                cursor: 'pointer',
+                            }}
+                        />
+                    </div>
 
                     {/* 模式切换 */}
                     <div style={{ display: 'flex', gap: '4px' }}>

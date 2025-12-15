@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useTimelineStore } from '../../store/timelineStore';
 import { OptionSelector } from '../../components/ui/OptionSelector';
 import { ColorPicker } from '../../components/ui/ColorPicker';
+import { SliderInput } from '../../components/ui/SliderInput';
 
 // 检测是否是文字类型的 code clip
 const isTextCodeClip = (content: string): boolean => {
-    return content.includes('lyra-text') || 
-           content.includes('<h1') || 
-           content.includes('<p') ||
-           content.includes('Text Element');
+    return content.includes('lyra-text') ||
+        content.includes('<h1') ||
+        content.includes('<p') ||
+        content.includes('Text Element');
 };
 
 // 从 HTML 中提取样式值
@@ -44,10 +45,14 @@ const updateTextContent = (content: string, newText: string): string => {
     return updated;
 };
 
-// 颜色格式转换
-const rgbaToHex = (rgba: string): string => {
-    if (rgba.startsWith('#')) return rgba;
-    const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+// 颜色格式标准化（保留透明度信息）
+const normalizeColor = (color: string): string => {
+    // 已经是 HEX 格式
+    if (color.startsWith('#')) return color;
+    // 已经是 rgba 格式（保留透明度）
+    if (color.startsWith('rgba')) return color;
+    // rgb 格式转换为 HEX
+    const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
     if (match) {
         const r = parseInt(match[1]).toString(16).padStart(2, '0');
         const g = parseInt(match[2]).toString(16).padStart(2, '0');
@@ -102,15 +107,7 @@ export const PropertyPanel = () => {
     const currentTextShadow = extractStyleValue(content, 'text-shadow') || 'none';
     const currentText = extractTextContent(content);
 
-    // 选项配置
-    const fontSizeOptions = [
-        { value: '1rem', label: `${t('properties.fontSizeOptions.small')} (1rem)` },
-        { value: '2rem', label: `${t('properties.fontSizeOptions.medium')} (2rem)` },
-        { value: '3rem', label: `${t('properties.fontSizeOptions.large')} (3rem)` },
-        { value: '4rem', label: `${t('properties.fontSizeOptions.xlarge')} (4rem)` },
-        { value: '5rem', label: `${t('properties.fontSizeOptions.xxlarge')} (5rem)` },
-        { value: '6rem', label: `${t('properties.fontSizeOptions.huge')} (6rem)` },
-    ];
+
 
     const fontWeightOptions = [
         { value: 'normal', label: t('properties.fontWeightOptions.normal') },
@@ -220,7 +217,7 @@ export const PropertyPanel = () => {
                     <div className="text-sm font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
                         {t('properties.textProperties')}
                     </div>
-                    
+
                     {/* Text */}
                     <div className="flex flex-col gap-2">
                         <label className="text-xs uppercase font-semibold"
@@ -238,7 +235,7 @@ export const PropertyPanel = () => {
                             {t('properties.color')}
                         </label>
                         <ColorPicker
-                            value={rgbaToHex(currentColor)}
+                            value={normalizeColor(currentColor)}
                             onChange={(color) => handleCodeStyleChange('color', color)}
                         />
                     </div>
@@ -249,10 +246,12 @@ export const PropertyPanel = () => {
                             style={{ color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>
                             {t('properties.fontSize')}
                         </label>
-                        <OptionSelector
+                        <SliderInput
                             value={currentFontSize}
-                            options={fontSizeOptions}
                             onChange={(value) => handleCodeStyleChange('font-size', value)}
+                            min={0.5}
+                            max={12}
+                            step={0.1}
                         />
                     </div>
 
