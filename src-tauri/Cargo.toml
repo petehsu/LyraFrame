@@ -36,6 +36,10 @@ tokio = { version = "1", features = ["fs", "io-util"] }
 # File system utilities
 walkdir = "2"
 
+# Compression (for .lf format)
+flate2 = "1.0"
+base64 = "0.22"
+
 # Future: Media processing
 # symphonia = "0.5"  # Audio decoding
 # image = "0.25"     # Image processing

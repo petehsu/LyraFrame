@@ -172,8 +172,8 @@ export const useProjectSync = (context: ProjectContext | null) => {
 
                 // 尝试解码二进制格式
                 let data: Record<string, unknown>;
-                if (isValidLfFile(buffer)) {
-                    data = decodeLfFormat(buffer) as Record<string, unknown>;
+                if (await isValidLfFile(buffer)) {
+                    data = await decodeLfFormat(buffer) as Record<string, unknown>;
                 } else {
                     // 尝试 JSON 格式
                     const text = await fs.readTextFile(lfFilePath);
@@ -253,7 +253,7 @@ export const useProjectSync = (context: ProjectContext | null) => {
                 };
 
                 // 使用二进制格式保存
-                const binaryData = encodeLfFormat(data);
+                const binaryData = await encodeLfFormat(data);
                 await fs.writeFile(lfFilePath, binaryData);
                 console.log('[ProjectSync] Auto-saved project');
             } catch (e) {

@@ -1,6 +1,7 @@
 mod commands;
 
 use commands::file_system;
+use commands::lf_format;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -29,6 +30,10 @@ pub fn run() {
             file_system::create_dir,
             file_system::remove_path,
             file_system::rename_path,
+            // LyraFrame format commands
+            lf_format::encode_lf_format,
+            lf_format::decode_lf_format,
+            lf_format::is_valid_lf_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

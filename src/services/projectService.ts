@@ -234,7 +234,7 @@ async function createProjectStructure(projectPath: string, projectName: string):
         tracks: [],
         created: new Date().toISOString()
     };
-    const binaryData = encodeLfFormat(projectData);
+    const binaryData = await encodeLfFormat(projectData);
     await fs.writeFile(lfFilePath, binaryData);
 
     // 创建 scenes 目录
