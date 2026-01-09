@@ -40,6 +40,10 @@ walkdir = "2"
 flate2 = "1.0"
 base64 = "0.22"
 
-# Future: Media processing
-# symphonia = "0.5"  # Audio decoding
+# Audio processing (for waveform generation)
+symphonia = { version = "0.5", default-features = false, features = ["mp3", "aac", "ogg", "wav", "flac"] }
+hound = "3.5"
+
+# Future: Image/Video processing
 # image = "0.25"     # Image processing
+# ffmpeg-next = "7"  # Video processing

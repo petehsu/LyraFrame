@@ -2,6 +2,7 @@ mod commands;
 
 use commands::file_system;
 use commands::lf_format;
+use commands::audio;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,6 +35,9 @@ pub fn run() {
             lf_format::encode_lf_format,
             lf_format::decode_lf_format,
             lf_format::is_valid_lf_file,
+            // Audio processing commands
+            audio::generate_waveform,
+            audio::get_audio_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
