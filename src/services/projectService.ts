@@ -1,9 +1,16 @@
 /**
  * 项目管理服务
- * 使用 File System Access API 和 localStorage 管理项目
+ * 
+ * 统一的项目管理接口，支持:
+ * - Tauri 桌面应用 (原生文件系统)
+ * - Web 浏览器 (File System Access API)
  */
 
+import { fs } from '../lib/fs';
+import { isTauri } from '../lib/platform';
 import { encodeLfFormat } from '../lib/lfFormat';
+
+// ============== Types ==============
 
 export interface ProjectInfo {
     name: string;
@@ -11,9 +18,18 @@ export interface ProjectInfo {
     lastOpened: string; // ISO date string
 }
 
+export interface ProjectContext {
+    info: ProjectInfo;
+    path: string;
+}
+
+// ============== Constants ==============
+
 const RECENT_PROJECTS_KEY = 'lyraframe_recent_projects';
 const CURRENT_PROJECT_KEY = 'lyraframe_current_project';
 const MAX_RECENT_PROJECTS = 10;
+
+// ============== Recent Projects (localStorage) ==============
 
 /**
  * 获取最近项目列表
@@ -87,17 +103,21 @@ export function setCurrentProject(project: ProjectInfo | null): void {
     }
 }
 
+// ============== Platform Detection ==============
+
 /**
- * 检查浏览器是否支持 File System Access API
+ * 检查文件系统是否可用
+ * - Tauri: 始终可用
+ * - Web: 需要 File System Access API 支持
  */
 export function isFileSystemAccessSupported(): boolean {
+    if (isTauri()) {
+        return true;
+    }
     return 'showDirectoryPicker' in window;
 }
 
-export interface ProjectContext {
-    info: ProjectInfo;
-    handle: FileSystemDirectoryHandle;
-}
+// ============== Project Operations ==============
 
 /**
  * 新建项目 - 让用户选择目录并创建项目结构
@@ -110,30 +130,33 @@ export async function createNewProject(): Promise<ProjectContext | null> {
 
     try {
         // 让用户选择目录
-        const dirHandle = await (window as any).showDirectoryPicker({
-            mode: 'readwrite',
-            startIn: 'documents'
+        const projectPath = await fs.pickDirectory({
+            title: '选择项目目录'
         });
 
-        const projectName = dirHandle.name;
+        if (!projectPath) {
+            return null; // 用户取消
+        }
+
+        const projectName = fs.basename(projectPath);
 
         // 创建项目结构
-        await createProjectStructure(dirHandle);
+        await createProjectStructure(projectPath, projectName);
 
         const project: ProjectInfo = {
             name: projectName,
-            path: projectName, // 注意：File System Access API 不提供完整路径
+            path: projectPath,
             lastOpened: new Date().toISOString()
         };
 
-        return { info: project, handle: dirHandle };
-    } catch (e: any) {
-        if (e.name === 'AbortError') {
-            // 用户取消了选择
+        return { info: project, path: projectPath };
+    } catch (e: unknown) {
+        const error = e as Error & { name?: string };
+        if (error.name === 'AbortError') {
             return null;
         }
         console.error('Failed to create project:', e);
-        alert('创建项目失败: ' + e.message);
+        alert('创建项目失败: ' + error.message);
         return null;
     }
 }
@@ -149,13 +172,18 @@ export async function openExistingProject(): Promise<ProjectContext | null> {
 
     try {
         // 让用户选择目录
-        const dirHandle = await (window as any).showDirectoryPicker({
-            mode: 'readwrite',
-            startIn: 'documents'
+        const projectPath = await fs.pickDirectory({
+            title: '打开 LyraFrame 项目'
         });
 
+        if (!projectPath) {
+            return null; // 用户取消
+        }
+
+        const projectName = fs.basename(projectPath);
+
         // 检查是否是有效的 LyraFrame 项目
-        const isValid = await validateProjectDirectory(dirHandle);
+        const isValid = await validateProjectDirectory(projectPath);
 
         if (!isValid) {
             // 如果不是有效项目，询问是否要初始化
@@ -164,25 +192,26 @@ export async function openExistingProject(): Promise<ProjectContext | null> {
             );
 
             if (confirmInit) {
-                await createProjectStructure(dirHandle);
+                await createProjectStructure(projectPath, projectName);
             } else {
                 return null;
             }
         }
 
         const project: ProjectInfo = {
-            name: dirHandle.name,
-            path: dirHandle.name,
+            name: projectName,
+            path: projectPath,
             lastOpened: new Date().toISOString()
         };
 
-        return { info: project, handle: dirHandle };
-    } catch (e: any) {
-        if (e.name === 'AbortError') {
+        return { info: project, path: projectPath };
+    } catch (e: unknown) {
+        const error = e as Error & { name?: string };
+        if (error.name === 'AbortError') {
             return null;
         }
         console.error('Failed to open project:', e);
-        alert('打开项目失败: ' + e.message);
+        alert('打开项目失败: ' + error.message);
         return null;
     }
 }
@@ -190,15 +219,14 @@ export async function openExistingProject(): Promise<ProjectContext | null> {
 /**
  * 创建项目目录结构
  */
-async function createProjectStructure(dirHandle: FileSystemDirectoryHandle): Promise<void> {
+async function createProjectStructure(projectPath: string, projectName: string): Promise<void> {
     // 创建 {项目名}.lf 配置文件 (二进制格式)
-    const lfFileName = `${dirHandle.name}.lf`;
-    const configFile = await dirHandle.getFileHandle(lfFileName, { create: true });
-    const writable = await configFile.createWritable();
+    const lfFileName = `${projectName}.lf`;
+    const lfFilePath = fs.joinPath(projectPath, lfFileName);
 
     // 使用 LyraFrame 专有二进制格式
     const projectData = {
-        name: dirHandle.name,
+        name: projectName,
         version: '1.0.0',
         aspectRatio: '16:9',
         fps: 30,
@@ -207,25 +235,22 @@ async function createProjectStructure(dirHandle: FileSystemDirectoryHandle): Pro
         created: new Date().toISOString()
     };
     const binaryData = encodeLfFormat(projectData);
-    await writable.write(binaryData.buffer as ArrayBuffer);
-    await writable.close();
+    await fs.writeFile(lfFilePath, binaryData);
 
     // 创建 scenes 目录
-    await dirHandle.getDirectoryHandle('scenes', { create: true });
+    await fs.mkdir(fs.joinPath(projectPath, 'scenes'));
 
     // 创建 assets 目录及子目录
-    const assetsDir = await dirHandle.getDirectoryHandle('assets', { create: true });
-    await assetsDir.getDirectoryHandle('images', { create: true });
-    await assetsDir.getDirectoryHandle('videos', { create: true });
-    await assetsDir.getDirectoryHandle('audio', { create: true });
+    await fs.mkdir(fs.joinPath(projectPath, 'assets', 'images'));
+    await fs.mkdir(fs.joinPath(projectPath, 'assets', 'videos'));
+    await fs.mkdir(fs.joinPath(projectPath, 'assets', 'audio'));
 
     // 创建 src 目录
-    await dirHandle.getDirectoryHandle('src', { create: true });
+    await fs.mkdir(fs.joinPath(projectPath, 'src'));
 
     // 创建主入口文件
-    const mainFile = await dirHandle.getFileHandle('main.ts', { create: true });
-    const mainWritable = await mainFile.createWritable();
-    await mainWritable.write(`// ${dirHandle.name} - LyraFrame Project
+    const mainFilePath = fs.joinPath(projectPath, 'main.ts');
+    const mainContent = `// ${projectName} - LyraFrame Project
 // Generated at ${new Date().toISOString()}
 
 import { Scene } from '@lyraframe/core';
@@ -240,28 +265,26 @@ export default function main(ctx: CanvasRenderingContext2D, time: number) {
     ctx.font = 'bold 48px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('${dirHandle.name}', ctx.canvas.width / 2, ctx.canvas.height / 2);
+    ctx.fillText('${projectName}', ctx.canvas.width / 2, ctx.canvas.height / 2);
 }
-`);
-    await mainWritable.close();
+`;
+    await fs.writeTextFile(mainFilePath, mainContent);
 }
 
 /**
  * 验证目录是否是有效的 LyraFrame 项目
  */
-async function validateProjectDirectory(dirHandle: FileSystemDirectoryHandle): Promise<boolean> {
+async function validateProjectDirectory(projectPath: string): Promise<boolean> {
     try {
+        const entries = await fs.readDir(projectPath);
         // 查找任何 .lf 文件
-        for await (const entry of (dirHandle as any).values()) {
-            if (entry.kind === 'file' && entry.name.endsWith('.lf')) {
-                return true;
-            }
-        }
-        return false;
+        return entries.some(entry => !entry.isDir && entry.name.endsWith('.lf'));
     } catch {
         return false;
     }
 }
+
+// ============== Utility Functions ==============
 
 /**
  * 格式化相对时间

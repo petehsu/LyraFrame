@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>AI-Powered Programmatic Video Editor</strong><br>
-  Create stunning videos with code, AI assistance, and visual editing — all in one modern interface.
+  Create stunning videos with code, AI assistance, and visual editing — now as a cross-platform desktop app!
 </p>
 
 <p align="center">
@@ -23,8 +23,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-CC--BY--NC--4.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/React-18.3-61DAFB?logo=react" alt="React">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Tauri-2.0-FFC131?logo=tauri" alt="Tauri">
   <img src="https://img.shields.io/badge/Vite-7.2-646CFF?logo=vite" alt="Vite">
 </p>
 
@@ -35,6 +36,8 @@
 - **🎬 Visual Timeline Editor** — Premiere-style timeline with drag-and-drop, clip resizing, and snap-to-grid
 - **💻 Code-Driven Content** — Create animations and graphics with HTML/CSS/JavaScript
 - **🤖 AI Assistant (Lyra)** — Natural language commands to control the editor
+- **🖥️ Desktop App** — Native file system access with Tauri 2.0 (macOS, Windows, Linux)
+- **🌐 Web Version** — Also runs in browser with File System Access API
 - **🎨 Modern UI** — Dark/Light mode with warm coral accents, floating panel design
 - **📦 Asset Browser** — Manage media, code snippets, and effects
 - **🔧 Property Inspector** — Fine-tune clip properties in real-time
@@ -44,6 +47,7 @@
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 18.x or higher
+- [Rust](https://www.rust-lang.org/tools/install) (for desktop app)
 - [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
 
 ### Installation
@@ -55,25 +59,43 @@ cd LyraFrame
 
 # Install dependencies
 npm install
-
-# Start development server
-npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+### Run as Desktop App (Recommended)
+
+```bash
+# Development mode
+npm run tauri:dev
+
+# Build for production
+npm run tauri:build
+```
+
+### Run as Web App
+
+```bash
+# Development mode
+npm run dev
+
+# Open http://localhost:5173 in your browser
+```
 
 ### Build for Production
 
 ```bash
+# Web build
 npm run build
-npm run preview
+
+# Desktop build (generates installers)
+npm run tauri:build
 ```
 
 ## 🛠 Tech Stack
 
 | Category | Technology |
 |----------|------------|
-| **Framework** | React 18.3 + TypeScript 5.6 |
+| **Desktop Runtime** | Tauri 2.0 + Rust |
+| **Frontend Framework** | React 19 + TypeScript 5.6 |
 | **Build Tool** | Vite 7.2 |
 | **State Management** | Zustand |
 | **UI Layout** | Allotment (Split Panels) |
@@ -89,16 +111,26 @@ LyraFrame/
 │   ├── assets/          # Static assets (logo, icons)
 │   ├── components/      # Reusable UI components
 │   │   └── layout/      # Workbench, ActivityBar, SidePanel
+│   ├── lib/
+│   │   └── fs/          # Cross-platform file system abstraction
 │   ├── modules/         # Feature modules
 │   │   ├── ai/          # AI Chat Widget
 │   │   ├── assets/      # Asset Browser
 │   │   ├── editor/      # Code Editor Panel
+│   │   ├── explorer/    # File Explorer
 │   │   ├── inspector/   # Property Panel
 │   │   ├── preview/     # Preview Player
 │   │   └── timeline/    # Timeline Container, Clips, Ruler
+│   ├── services/        # Business logic services
 │   ├── store/           # Zustand state stores
 │   ├── styles/          # Global CSS (theme.css, ide.css)
 │   └── App.tsx          # Main application component
+├── src-tauri/           # Tauri/Rust backend
+│   ├── src/
+│   │   ├── commands/    # Rust commands for file system
+│   │   └── lib.rs       # Tauri app setup
+│   ├── Cargo.toml       # Rust dependencies
+│   └── tauri.conf.json  # Tauri configuration
 ├── public/              # Static public files
 └── package.json
 ```
@@ -111,6 +143,15 @@ LyraFrame uses a carefully crafted design system:
 - **Spacing**: 6px panel gaps, 16px border radius
 - **Theme**: Auto-detects system preference (dark/light)
 - **Typography**: Inter font family
+
+## 🖥️ Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **macOS** | ✅ Supported | Native rounded corners, full file system access |
+| **Windows** | ✅ Supported | Windows 10/11 |
+| **Linux** | ✅ Supported | GTK-based, WebKitGTK required |
+| **Web** | ✅ Supported | Chrome/Edge with File System Access API |
 
 ## 🤝 Contributing
 

@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>AI 驱动的可编程视频编辑器</strong><br>
-  用代码、AI 助手和可视化编辑创作精彩视频 — 一切尽在现代化界面中
+  用代码、AI 助手和可视化编辑创作精彩视频 — 现已支持跨平台桌面应用！
 </p>
 
 <p align="center">
@@ -23,8 +23,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/许可证-CC--BY--NC--4.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/React-18.3-61DAFB?logo=react" alt="React">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Tauri-2.0-FFC131?logo=tauri" alt="Tauri">
   <img src="https://img.shields.io/badge/Vite-7.2-646CFF?logo=vite" alt="Vite">
 </p>
 
@@ -35,6 +36,8 @@
 - **🎬 可视化时间轴编辑器** — Premiere 风格的时间轴，支持拖放、调整素材时长、智能吸附
 - **💻 代码驱动内容** — 使用 HTML/CSS/JavaScript 创建动画和图形
 - **🤖 AI 助手 (Lyra)** — 用自然语言控制编辑器
+- **🖥️ 桌面应用** — 通过 Tauri 2.0 实现原生文件系统访问 (macOS, Windows, Linux)
+- **🌐 Web 版本** — 也可在浏览器中运行，使用 File System Access API
 - **🎨 现代化界面** — 深色/浅色模式，珊瑚色调，悬浮面板设计
 - **📦 素材浏览器** — 管理媒体、代码片段和特效
 - **🔧 属性检查器** — 实时调整素材属性
@@ -44,6 +47,7 @@
 ### 前置要求
 
 - [Node.js](https://nodejs.org/) 18.x 或更高版本
+- [Rust](https://www.rust-lang.org/tools/install) (用于桌面应用)
 - [npm](https://www.npmjs.com/) 或 [pnpm](https://pnpm.io/)
 
 ### 安装
@@ -55,25 +59,43 @@ cd LyraFrame
 
 # 安装依赖
 npm install
-
-# 启动开发服务器
-npm run dev
 ```
 
-在浏览器中打开 [http://localhost:5173](http://localhost:5173)
+### 以桌面应用运行（推荐）
+
+```bash
+# 开发模式
+npm run tauri:dev
+
+# 构建生产版本
+npm run tauri:build
+```
+
+### 以 Web 应用运行
+
+```bash
+# 开发模式
+npm run dev
+
+# 在浏览器中打开 http://localhost:5173
+```
 
 ### 构建生产版本
 
 ```bash
+# Web 构建
 npm run build
-npm run preview
+
+# 桌面应用构建（生成安装包）
+npm run tauri:build
 ```
 
 ## 🛠 技术栈
 
 | 分类 | 技术 |
 |------|------|
-| **框架** | React 18.3 + TypeScript 5.6 |
+| **桌面运行时** | Tauri 2.0 + Rust |
+| **前端框架** | React 19 + TypeScript 5.6 |
 | **构建工具** | Vite 7.2 |
 | **状态管理** | Zustand |
 | **UI 布局** | Allotment (分割面板) |
@@ -89,16 +111,26 @@ LyraFrame/
 │   ├── assets/          # 静态资源 (logo, 图标)
 │   ├── components/      # 可复用 UI 组件
 │   │   └── layout/      # Workbench, ActivityBar, SidePanel
+│   ├── lib/
+│   │   └── fs/          # 跨平台文件系统抽象层
 │   ├── modules/         # 功能模块
 │   │   ├── ai/          # AI 聊天组件
 │   │   ├── assets/      # 素材浏览器
 │   │   ├── editor/      # 代码编辑器面板
+│   │   ├── explorer/    # 文件浏览器
 │   │   ├── inspector/   # 属性面板
 │   │   ├── preview/     # 预览播放器
 │   │   └── timeline/    # 时间轴容器、素材、标尺
+│   ├── services/        # 业务逻辑服务
 │   ├── store/           # Zustand 状态存储
 │   ├── styles/          # 全局 CSS (theme.css, ide.css)
 │   └── App.tsx          # 主应用组件
+├── src-tauri/           # Tauri/Rust 后端
+│   ├── src/
+│   │   ├── commands/    # Rust 文件系统命令
+│   │   └── lib.rs       # Tauri 应用设置
+│   ├── Cargo.toml       # Rust 依赖
+│   └── tauri.conf.json  # Tauri 配置
 ├── public/              # 静态公共文件
 └── package.json
 ```
@@ -111,6 +143,15 @@ LyraFrame 使用精心设计的设计系统：
 - **间距**: 6px 面板间隙，16px 圆角
 - **主题**: 自动检测系统偏好 (深色/浅色)
 - **字体**: Inter 字体家族
+
+## 🖥️ 平台支持
+
+| 平台 | 状态 | 说明 |
+|------|------|------|
+| **macOS** | ✅ 支持 | 原生圆角窗口，完整文件系统访问 |
+| **Windows** | ✅ 支持 | Windows 10/11 |
+| **Linux** | ✅ 支持 | 基于 GTK，需要 WebKitGTK |
+| **Web** | ✅ 支持 | Chrome/Edge 使用 File System Access API |
 
 ## 🤝 贡献
 

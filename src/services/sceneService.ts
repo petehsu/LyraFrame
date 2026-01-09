@@ -3,9 +3,12 @@
  * 
  * 负责管理 scenes/ 目录下的代码片段文件
  * 实现 clip ↔ 文件 的双向同步
+ * 
+ * 支持跨平台（Tauri + Web）
  */
 
 import type { ClipType } from '../store/types';
+import { fs } from '../lib/fs';
 import { emitFileCreated, emitFileDeleted } from './fileSystemEvents';
 
 /**
@@ -52,27 +55,21 @@ export function getSourceType(source: string): 'scene' | 'asset' {
  * 
  * @param source - 相对路径
  * @param content - 文件内容
- * @param projectHandle - 项目目录句柄
+ * @param projectPath - 项目路径
  */
 export async function createSceneFile(
     source: string,
     content: string,
-    projectHandle: FileSystemDirectoryHandle
+    projectPath: string
 ): Promise<void> {
-    const parts = source.split('/');
-    let currentHandle = projectHandle;
+    const fullPath = fs.joinPath(projectPath, source);
 
-    // 遍历创建目录
-    for (let i = 0; i < parts.length - 1; i++) {
-        currentHandle = await currentHandle.getDirectoryHandle(parts[i], { create: true });
-    }
+    // 确保父目录存在
+    const parentDir = fs.dirname(fullPath);
+    await fs.mkdir(parentDir);
 
-    // 创建文件
-    const fileName = parts[parts.length - 1];
-    const fileHandle = await currentHandle.getFileHandle(fileName, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(content);
-    await writable.close();
+    // 写入文件
+    await fs.writeTextFile(fullPath, content);
 
     console.log(`[SceneService] Created: ${source}`);
     emitFileCreated(source);
@@ -82,29 +79,22 @@ export async function createSceneFile(
  * 读取场景文件内容
  * 
  * @param source - 相对路径
- * @param projectHandle - 项目目录句柄
+ * @param projectPath - 项目路径
  * @returns 文件内容字符串，或 null 如果文件不存在
  */
 export async function loadSceneContent(
     source: string,
-    projectHandle: FileSystemDirectoryHandle
+    projectPath: string
 ): Promise<string | null> {
     try {
-        const parts = source.split('/');
-        let currentHandle: FileSystemDirectoryHandle = projectHandle;
+        const fullPath = fs.joinPath(projectPath, source);
+        const exists = await fs.exists(fullPath);
 
-        // 遍历目录
-        for (let i = 0; i < parts.length - 1; i++) {
-            currentHandle = await currentHandle.getDirectoryHandle(parts[i]);
+        if (!exists) {
+            return null;
         }
 
-        // 读取文件
-        const fileName = parts[parts.length - 1];
-        const fileHandle = await currentHandle.getFileHandle(fileName);
-        const file = await fileHandle.getFile();
-        const content = await file.text();
-
-        return content;
+        return await fs.readTextFile(fullPath);
     } catch (error) {
         console.warn(`[SceneService] Failed to load: ${source}`, error);
         return null;
@@ -116,28 +106,22 @@ export async function loadSceneContent(
  * 
  * @param source - 相对路径
  * @param content - 新内容
- * @param projectHandle - 项目目录句柄
+ * @param projectPath - 项目路径
  */
 export async function saveSceneContent(
     source: string,
     content: string,
-    projectHandle: FileSystemDirectoryHandle
+    projectPath: string
 ): Promise<void> {
     try {
-        const parts = source.split('/');
-        let currentHandle: FileSystemDirectoryHandle = projectHandle;
+        const fullPath = fs.joinPath(projectPath, source);
 
-        // 遍历目录
-        for (let i = 0; i < parts.length - 1; i++) {
-            currentHandle = await currentHandle.getDirectoryHandle(parts[i], { create: true });
-        }
+        // 确保父目录存在
+        const parentDir = fs.dirname(fullPath);
+        await fs.mkdir(parentDir);
 
         // 写入文件
-        const fileName = parts[parts.length - 1];
-        const fileHandle = await currentHandle.getFileHandle(fileName, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(content);
-        await writable.close();
+        await fs.writeTextFile(fullPath, content);
 
         console.log(`[SceneService] Saved: ${source}`);
     } catch (error) {
@@ -150,27 +134,21 @@ export async function saveSceneContent(
  * 删除场景文件
  * 
  * @param source - 相对路径
- * @param projectHandle - 项目目录句柄
+ * @param projectPath - 项目路径
  */
 export async function deleteSceneFile(
     source: string,
-    projectHandle: FileSystemDirectoryHandle
+    projectPath: string
 ): Promise<void> {
     try {
-        const parts = source.split('/');
-        let currentHandle: FileSystemDirectoryHandle = projectHandle;
+        const fullPath = fs.joinPath(projectPath, source);
+        const exists = await fs.exists(fullPath);
 
-        // 遍历到父目录
-        for (let i = 0; i < parts.length - 1; i++) {
-            currentHandle = await currentHandle.getDirectoryHandle(parts[i]);
+        if (exists) {
+            await fs.remove(fullPath);
+            console.log(`[SceneService] Deleted: ${source}`);
+            emitFileDeleted(source);
         }
-
-        // 删除文件
-        const fileName = parts[parts.length - 1];
-        await currentHandle.removeEntry(fileName);
-
-        console.log(`[SceneService] Deleted: ${source}`);
-        emitFileDeleted(source);
     } catch (error) {
         console.warn(`[SceneService] Failed to delete: ${source}`, error);
     }

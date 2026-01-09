@@ -10,6 +10,7 @@ import { useProjectSync } from './hooks/useProjectSync';
 import { useTimelineStore } from './store/timelineStore';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useResponsiveLayout } from './hooks/useResponsiveLayout';
+import { fs } from './lib/fs';
 
 import { useTranslation } from 'react-i18next';
 
@@ -48,7 +49,6 @@ function App() {
     name: string;
     path: string;
     content: string | null;
-    handle: FileSystemFileHandle;
     blobUrl?: string;
   } | null>(null);
 
@@ -69,27 +69,43 @@ function App() {
     setIsLoading(false);
   };
 
-  // 处理文件打开
-  const handleOpenFile = async (fileHandle: FileSystemFileHandle, path: string = fileHandle.name) => {
+  // 处理文件打开 (path-based API)
+  const handleOpenFile = async (filePath: string, fileName: string) => {
+    if (!currentProject) return;
+
     try {
-      const file = await fileHandle.getFile();
+      const fullPath = fs.joinPath(currentProject.path, filePath);
 
-      const isMedia = file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/');
+      // 判断是否是媒体文件
+      const ext = fileName.split('.').pop()?.toLowerCase() || '';
+      const mediaExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'mp4', 'webm', 'mov', 'mp3', 'wav', 'ogg'];
+      const isMedia = mediaExtensions.includes(ext);
 
-      let content = null;
-      let blobUrl = undefined;
+      let content: string | null = null;
+      let blobUrl: string | undefined = undefined;
 
       if (isMedia) {
-        blobUrl = URL.createObjectURL(file);
+        // 读取二进制文件并创建 blob URL
+        const data = await fs.readFile(fullPath);
+        const mimeTypes: Record<string, string> = {
+          'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+          'gif': 'image/gif', 'webp': 'image/webp', 'svg': 'image/svg+xml',
+          'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime',
+          'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg'
+        };
+        // Create proper ArrayBuffer copy to avoid SharedArrayBuffer issues
+        const buffer = new ArrayBuffer(data.byteLength);
+        new Uint8Array(buffer).set(data);
+        const blob = new Blob([buffer], { type: mimeTypes[ext] || 'application/octet-stream' });
+        blobUrl = URL.createObjectURL(blob);
       } else {
-        content = await file.text();
+        content = await fs.readTextFile(fullPath);
       }
 
       setActiveFile({
-        name: fileHandle.name,
-        path,
+        name: fileName,
+        path: filePath,
         content,
-        handle: fileHandle,
         blobUrl
       });
     } catch (err) {
@@ -119,23 +135,18 @@ function App() {
     }
   };
 
-  // 处理文件保存
+  // 处理文件保存 (path-based API)
   const handleSaveFile = async () => {
-    if (!activeFile || !activeFile.handle) return;
+    if (!activeFile || !currentProject) return;
+    if (activeFile.content === null) {
+      console.warn('Cannot save binary file content via text write');
+      return;
+    }
+
     try {
-      // 检查 handle 是否有 createWritable 方法 (File System Access API)
-      if (activeFile.handle.createWritable) {
-        if (activeFile.content === null) {
-          console.warn('Cannot save binary file content via text write');
-          return;
-        }
-        const writable = await activeFile.handle.createWritable();
-        await writable.write(activeFile.content);
-        await writable.close();
-        console.log('File saved locally:', activeFile.name);
-      } else {
-        console.warn('File handle does not support writing (maybe mock or readonly?)');
-      }
+      const fullPath = fs.joinPath(currentProject.path, activeFile.path);
+      await fs.writeTextFile(fullPath, activeFile.content);
+      console.log('File saved:', activeFile.name);
     } catch (error) {
       console.error('Failed to save file:', error);
     }

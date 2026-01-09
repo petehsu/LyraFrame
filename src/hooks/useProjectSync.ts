@@ -4,11 +4,12 @@ import type { ProjectContext } from '../services/projectService';
 import { decodeLfFormat, encodeLfFormat, isValidLfFile } from '../lib/lfFormat';
 import { getAssetUrl, cleanupAssetCache } from '../services/assetService';
 import { loadSceneContent, getSourceType, createSceneFile, generateDefaultContent, deleteSceneFile } from '../services/sceneService';
+import { fs } from '../lib/fs';
 import type { Clip, Track } from '../store/types';
 
-// Simple debounce
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
-    let timeout: any;
+// Simple debounce with proper typing
+function debounce<T extends (...args: never[]) => void>(func: T, wait: number) {
+    let timeout: ReturnType<typeof setTimeout>;
     return (...args: Parameters<T>) => {
         clearTimeout(timeout);
         timeout = setTimeout(() => func(...args), wait);
@@ -22,7 +23,7 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
  */
 async function loadClipContents(
     tracks: Track[],
-    projectHandle: FileSystemDirectoryHandle
+    projectPath: string
 ): Promise<Track[]> {
     const resolvedTracks = await Promise.all(
         tracks.map(async (track) => {
@@ -38,20 +39,20 @@ async function loadClipContents(
                     try {
                         if (sourceType === 'scene') {
                             // 尝试读取场景文件内容
-                            let content = await loadSceneContent(clip.source, projectHandle);
+                            let content = await loadSceneContent(clip.source, projectPath);
 
                             // 如果文件不存在，自动创建
                             if (content === null) {
                                 console.log(`[ProjectSync] Scene file missing, creating: ${clip.source}`);
                                 const defaultContent = generateDefaultContent(clip.type, clip.name);
-                                await createSceneFile(clip.source, defaultContent, projectHandle);
+                                await createSceneFile(clip.source, defaultContent, projectPath);
                                 content = defaultContent;
                             }
 
                             return { ...clip, content };
                         } else {
                             // 读取媒体资源 blob URL
-                            const content = await getAssetUrl(clip.source, projectHandle);
+                            const content = await getAssetUrl(clip.source, projectPath);
                             return { ...clip, content };
                         }
                     } catch (error) {
@@ -72,7 +73,7 @@ async function loadClipContents(
  */
 async function ensureSceneFilesExist(
     tracks: Track[],
-    projectHandle: FileSystemDirectoryHandle
+    projectPath: string
 ): Promise<Track[]> {
     const processedTracks = await Promise.all(
         tracks.map(async (track) => {
@@ -85,12 +86,12 @@ async function ensureSceneFilesExist(
                     // 只处理场景类型的 clips
                     if (sourceType === 'scene' && clip.content) {
                         // 检查文件是否存在
-                        const existingContent = await loadSceneContent(clip.source, projectHandle);
+                        const existingContent = await loadSceneContent(clip.source, projectPath);
 
                         if (existingContent === null) {
                             // 文件不存在，使用 clip.content 创建
                             console.log(`[ProjectSync] Creating scene file for INITIAL_STATE: ${clip.source}`);
-                            await createSceneFile(clip.source, clip.content, projectHandle);
+                            await createSceneFile(clip.source, clip.content, projectPath);
                         }
                     }
 
@@ -117,20 +118,26 @@ function stripRuntimeContent(tracks: Track[]): Track[] {
     }));
 }
 
-export const useProjectSync = (context: ProjectContext | null) => {
-    const isInitialLoad = useRef(true);
-    const lfFileNameRef = useRef<string | null>(null);
-
-    // Helper to find the .lf file
-    const findLfFile = async (handle: FileSystemDirectoryHandle): Promise<string | null> => {
-        // @ts-ignore
-        for await (const entry of handle.values()) {
-            if (entry.kind === 'file' && entry.name.endsWith('.lf')) {
+/**
+ * 在项目目录中查找 .lf 文件
+ */
+async function findLfFile(projectPath: string): Promise<string | null> {
+    try {
+        const entries = await fs.readDir(projectPath);
+        for (const entry of entries) {
+            if (!entry.isDir && entry.name.endsWith('.lf')) {
                 return entry.name;
             }
         }
-        return null;
-    };
+    } catch (error) {
+        console.warn('[ProjectSync] Failed to read project directory:', error);
+    }
+    return null;
+}
+
+export const useProjectSync = (context: ProjectContext | null) => {
+    const isInitialLoad = useRef(true);
+    const lfFileNameRef = useRef<string | null>(null);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -145,8 +152,10 @@ export const useProjectSync = (context: ProjectContext | null) => {
 
         const load = async () => {
             try {
+                const projectPath = context.path;
+
                 // Find the .lf file dynamically
-                const lfFileName = await findLfFile(context.handle);
+                const lfFileName = await findLfFile(projectPath);
                 if (!lfFileName) {
                     console.warn('No .lf file found in project');
                     isInitialLoad.current = false;
@@ -154,19 +163,21 @@ export const useProjectSync = (context: ProjectContext | null) => {
                 }
                 lfFileNameRef.current = lfFileName;
 
-                // @ts-ignore
-                const fileHandle = await context.handle.getFileHandle(lfFileName);
-                const file = await fileHandle.getFile();
-                const buffer = await file.arrayBuffer();
+                // Read the .lf file
+                const lfFilePath = fs.joinPath(projectPath, lfFileName);
+                const fileData = await fs.readFile(lfFilePath);
+                // Create a proper ArrayBuffer copy to handle SharedArrayBuffer
+                const buffer = new ArrayBuffer(fileData.byteLength);
+                new Uint8Array(buffer).set(fileData);
 
                 // 尝试解码二进制格式
-                let data: any;
+                let data: Record<string, unknown>;
                 if (isValidLfFile(buffer)) {
-                    data = decodeLfFormat(buffer);
+                    data = decodeLfFormat(buffer) as Record<string, unknown>;
                 } else {
                     // 尝试 JSON 格式
-                    const text = await file.text();
-                    data = JSON.parse(text);
+                    const text = await fs.readTextFile(lfFilePath);
+                    data = JSON.parse(text) as Record<string, unknown>;
                 }
 
                 // 处理 aspectRatio
@@ -181,7 +192,7 @@ export const useProjectSync = (context: ProjectContext | null) => {
                 }
 
                 // 基础状态更新
-                const stateUpdate: any = {
+                const stateUpdate: Record<string, unknown> = {
                     name: data.name,
                     duration: data.duration || 30000,
                     fps: data.fps || 30,
@@ -191,14 +202,14 @@ export const useProjectSync = (context: ProjectContext | null) => {
                 // 加载 tracks 中的资源内容
                 if (Array.isArray(data.tracks) && data.tracks.length > 0) {
                     // .lf 文件有 tracks，使用它们
-                    const resolvedTracks = await loadClipContents(data.tracks, context.handle);
+                    const resolvedTracks = await loadClipContents(data.tracks as Track[], projectPath);
                     stateUpdate.tracks = resolvedTracks;
                 } else {
                     // .lf 文件没有 tracks，使用 INITIAL_STATE 的 tracks
                     // 但仍需为这些 clips 创建场景文件
                     const currentTracks = useTimelineStore.getState().tracks;
                     if (currentTracks.length > 0) {
-                        const resolvedTracks = await ensureSceneFilesExist(currentTracks, context.handle);
+                        const resolvedTracks = await ensureSceneFilesExist(currentTracks, projectPath);
                         stateUpdate.tracks = resolvedTracks;
                     }
                 }
@@ -219,18 +230,17 @@ export const useProjectSync = (context: ProjectContext | null) => {
     useEffect(() => {
         if (!context) return;
 
-        const save = async (state: any) => {
+        const projectPath = context.path;
+
+        const save = async (state: Record<string, unknown>) => {
             if (isInitialLoad.current) return;
             if (!lfFileNameRef.current) return;
 
             try {
-                // @ts-ignore
-                const fileHandle = await context.handle.getFileHandle(lfFileNameRef.current, { create: true });
-                // @ts-ignore
-                const writable = await fileHandle.createWritable();
+                const lfFilePath = fs.joinPath(projectPath, lfFileNameRef.current);
 
                 // 保存时只保留 source，不保存 content
-                const cleanTracks = stripRuntimeContent(state.tracks);
+                const cleanTracks = stripRuntimeContent(state.tracks as Track[]);
 
                 const data = {
                     name: state.name,
@@ -244,8 +254,7 @@ export const useProjectSync = (context: ProjectContext | null) => {
 
                 // 使用二进制格式保存
                 const binaryData = encodeLfFormat(data);
-                await writable.write(binaryData.buffer as ArrayBuffer);
-                await writable.close();
+                await fs.writeFile(lfFilePath, binaryData);
                 console.log('[ProjectSync] Auto-saved project');
             } catch (e) {
                 console.error('[ProjectSync] Auto-save error:', e);
@@ -280,7 +289,7 @@ export const useProjectSync = (context: ProjectContext | null) => {
                         const sourceType = getSourceType(source);
                         if (sourceType === 'scene') {
                             try {
-                                await deleteSceneFile(source, context.handle);
+                                await deleteSceneFile(source, projectPath);
                                 console.log(`[ProjectSync] Deleted scene file: ${source}`);
                             } catch (error) {
                                 console.warn(`[ProjectSync] Failed to delete scene: ${source}`, error);
@@ -296,7 +305,7 @@ export const useProjectSync = (context: ProjectContext | null) => {
                 state.aspectRatio !== prevState.aspectRatio ||
                 state.fps !== prevState.fps
             ) {
-                debouncedSave(state);
+                debouncedSave(state as unknown as Record<string, unknown>);
             }
         });
 

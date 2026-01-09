@@ -11,7 +11,7 @@ import { ChevronDown, ChevronRight, Globe } from 'lucide-react';
 interface SidebarContainerProps {
     activeTab: string;
     currentProject: ProjectContext | null;
-    onOpenFile: (handle: FileSystemFileHandle, path?: string) => void;
+    onOpenFile: (filePath: string, fileName: string) => void;
 }
 
 /**
