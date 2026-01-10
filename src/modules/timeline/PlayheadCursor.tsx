@@ -14,6 +14,7 @@ interface PlayheadCursorProps {
  * 1. 拖动时使用 transform 直接更新 DOM，不触发 React re-render
  * 2. 使用 requestAnimationFrame 优化性能
  * 3. 只在拖动结束时更新 store
+ * 4. 正确处理滚动偏移
  */
 export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     pixelsPerSecond,
@@ -53,11 +54,13 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
         const target = e.currentTarget as HTMLElement;
         target.setPointerCapture(e.pointerId);
 
-        // 获取内容容器
+        // 获取内容容器（播放头的父元素）
         const contentContainer = playheadRef.current?.parentElement;
         if (!contentContainer) return;
 
-        const contentRect = contentContainer.getBoundingClientRect();
+        // 找到可滚动的容器（带有 overflow-auto 的父元素）
+        // PlayheadCursor -> 内容 div -> 滚动容器
+        const scrollContainer = contentContainer.parentElement as HTMLElement | null;
 
         const handleMove = (ev: PointerEvent) => {
             if (!isDraggingRef.current) return;
@@ -69,8 +72,17 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
 
             // 使用 RAF 优化
             rafRef.current = requestAnimationFrame(() => {
-                // 鼠标相对于内容容器的X坐标
-                const mouseXInContent = ev.clientX - contentRect.left;
+                // 每次都重新获取 rect，因为滚动会改变它
+                const contentRect = contentContainer.getBoundingClientRect();
+
+                // 获取滚动偏移
+                const scrollLeft = scrollContainer?.scrollLeft || 0;
+
+                // 鼠标相对于内容容器可视区域的X坐标
+                const mouseXInViewport = ev.clientX - contentRect.left;
+
+                // 加上滚动偏移，得到在整个内容中的实际位置
+                const mouseXInContent = mouseXInViewport + scrollLeft;
 
                 // 限制在有效范围内
                 const minPos = sidebarWidth;
