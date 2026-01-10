@@ -10,10 +10,10 @@ interface PlayheadCursorProps {
 /**
  * PlayheadCursor - 时间轴播放头组件
  * 
- * 优化方案：
- * 1. 拖动时使用 transform 直接更新 DOM，不触发 React re-render
- * 2. 使用 requestAnimationFrame 优化性能
- * 3. 只在拖动结束时更新 store
+ * 布局说明：
+ * - 播放头位于可滚动的时间轴内容区域内
+ * - sidebarWidth 现在是 0（轨道名在外部独立区域）
+ * - 位置 = currentTime * pixelsPerSecond
  */
 export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     pixelsPerSecond,
@@ -24,25 +24,25 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
     const isDraggingRef = useRef(false);
     const playheadRef = useRef<HTMLDivElement>(null);
     const rafRef = useRef<number | null>(null);
-    const currentPosRef = useRef<number>(0);
+    const currentTimeRef = useRef<number>(currentTime);
 
-    // 计算播放头位置（现在 sidebarWidth 通常是 0，因为轨道名在外部）
-    const timePosition = (currentTime / 1000) * pixelsPerSecond;
-    const position = timePosition + sidebarWidth;
+    // 计算播放头位置
+    const position = (currentTime / 1000) * pixelsPerSecond + sidebarWidth;
 
-    // 同步 ref 位置
+    // 同步 ref
     useEffect(() => {
         if (!isDraggingRef.current) {
-            currentPosRef.current = position;
+            currentTimeRef.current = currentTime;
         }
-    }, [position]);
+    }, [currentTime]);
 
     // 直接更新 DOM 位置
-    const updatePlayheadPosition = useCallback((pos: number) => {
+    const updatePlayheadPosition = useCallback((timeMs: number) => {
         if (playheadRef.current) {
+            const pos = (timeMs / 1000) * pixelsPerSecond + sidebarWidth;
             playheadRef.current.style.left = `${pos}px`;
         }
-    }, []);
+    }, [pixelsPerSecond, sidebarWidth]);
 
     // 拖拽处理
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -53,7 +53,6 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
         const target = e.currentTarget as HTMLElement;
         target.setPointerCapture(e.pointerId);
 
-        // 使用传入的 containerRef（滚动容器）
         const scrollContainer = containerRef.current;
         if (!scrollContainer) return;
 
@@ -73,21 +72,20 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
                 // 鼠标相对于滚动容器可视区域的X坐标
                 const mouseXInViewport = ev.clientX - containerRect.left;
 
-                // 加上滚动偏移
+                // 加上滚动偏移，得到在内容中的实际位置
                 const scrollLeft = scrollContainer.scrollLeft;
                 const mouseXInContent = mouseXInViewport + scrollLeft;
 
-                // 加上 sidebarWidth 偏移（如果有的话）
-                const posInTimeline = mouseXInContent + sidebarWidth;
+                // 转换为时间（毫秒）
+                // 注意：mouseXInContent 不需要减去 sidebarWidth，因为整个内容区域就是时间轴
+                const newTime = (mouseXInContent / pixelsPerSecond) * 1000;
 
                 // 限制在有效范围内
-                const minPos = sidebarWidth;
-                const maxPos = sidebarWidth + (duration / 1000) * pixelsPerSecond;
-                const clampedPos = Math.max(minPos, Math.min(posInTimeline, maxPos));
+                const clampedTime = Math.max(0, Math.min(newTime, duration));
 
-                // 直接更新 DOM
-                currentPosRef.current = clampedPos;
-                updatePlayheadPosition(clampedPos);
+                // 更新 ref 和 DOM
+                currentTimeRef.current = clampedTime;
+                updatePlayheadPosition(clampedTime);
             });
         };
 
@@ -100,10 +98,8 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
                 rafRef.current = null;
             }
 
-            // 计算最终时间并更新 store
-            const timelineX = currentPosRef.current - sidebarWidth;
-            const newTime = (timelineX / pixelsPerSecond) * 1000;
-            setPlayhead(Math.max(0, Math.min(newTime, duration)));
+            // 更新 store
+            setPlayhead(currentTimeRef.current);
 
             window.removeEventListener('pointermove', handleMove);
             window.removeEventListener('pointerup', handleUp);
@@ -114,7 +110,7 @@ export const PlayheadCursor: React.FC<PlayheadCursorProps> = ({
 
         window.addEventListener('pointermove', handleMove, { passive: true });
         window.addEventListener('pointerup', handleUp);
-    }, [containerRef, sidebarWidth, pixelsPerSecond, duration, setPlayhead, updatePlayheadPosition]);
+    }, [containerRef, pixelsPerSecond, duration, setPlayhead, updatePlayheadPosition]);
 
     // 清理
     useEffect(() => {
