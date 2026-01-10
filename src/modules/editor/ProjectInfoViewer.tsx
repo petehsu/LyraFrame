@@ -1,6 +1,7 @@
 import { useTimelineStore } from '../../store/timelineStore';
 import { Clock, Layers, Settings, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { getCurrentProject } from '../../services/projectService';
 
 // 格式化时长
 const formatDuration = (ms: number) => {
@@ -8,6 +9,20 @@ const formatDuration = (ms: number) => {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+// 格式化日期
+const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '—';
+    try {
+        const d = new Date(dateStr);
+        return d.toLocaleString('zh-CN', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+        });
+    } catch {
+        return '—';
+    }
 };
 
 interface ProjectInfoViewerProps {
@@ -80,6 +95,10 @@ export const ProjectInfoViewer = ({ projectData }: ProjectInfoViewerProps) => {
     const height = 1080;
     const width = Math.round(height * aspectRatio);
 
+    // 获取项目的最后打开时间
+    const currentProject = getCurrentProject();
+    const lastOpened = currentProject?.lastOpened;
+
     return (
         <div
             className="h-full w-full overflow-auto p-6"
@@ -113,6 +132,8 @@ export const ProjectInfoViewer = ({ projectData }: ProjectInfoViewerProps) => {
                         title="项目信息"
                         items={[
                             { label: '版本', value: projectData?.version || '1.0.0' },
+                            { label: '创建', value: formatDate(projectData?.created || lastOpened) },
+                            { label: '修改', value: formatDate(lastOpened) },
                         ]}
                     />
 
