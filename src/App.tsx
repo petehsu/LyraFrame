@@ -76,15 +76,20 @@ function App() {
     try {
       const fullPath = fs.joinPath(currentProject.path, filePath);
 
-      // 判断是否是媒体文件
+      // 判断文件类型
       const ext = fileName.split('.').pop()?.toLowerCase() || '';
       const mediaExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'mp4', 'webm', 'mov', 'mp3', 'wav', 'ogg'];
       const isMedia = mediaExtensions.includes(ext);
+      const isLfFile = ext === 'lf';
 
       let content: string | null = null;
       let blobUrl: string | undefined = undefined;
 
-      if (isMedia) {
+      if (isLfFile) {
+        // .lf 文件是二进制格式，不需要读取内容
+        // CodeEditorPanel 会检测到 .lf 后缀并显示 ProjectInfoViewer
+        content = null;
+      } else if (isMedia) {
         // 读取二进制文件并创建 blob URL
         const data = await fs.readFile(fullPath);
         const mimeTypes: Record<string, string> = {
