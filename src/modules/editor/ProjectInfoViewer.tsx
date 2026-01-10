@@ -10,16 +10,6 @@ const formatDuration = (ms: number) => {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-// 格式化日期
-const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    return d.toLocaleString('zh-CN', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit'
-    });
-};
-
 interface ProjectInfoViewerProps {
     projectData?: {
         name?: string;
@@ -123,8 +113,6 @@ export const ProjectInfoViewer = ({ projectData }: ProjectInfoViewerProps) => {
                         title="项目信息"
                         items={[
                             { label: '版本', value: projectData?.version || '1.0.0' },
-                            { label: '创建', value: formatDate(projectData?.created) },
-                            { label: '修改', value: formatDate(projectData?.modified) },
                         ]}
                     />
 
