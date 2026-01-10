@@ -176,7 +176,7 @@ body,
     border-radius: var(--radius-panel);
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg), var(--border-highlight);
 }
 
 /* ========================================
@@ -188,7 +188,7 @@ body,
     border-radius: var(--radius-panel);
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 /* ========================================
@@ -203,7 +203,7 @@ body,
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 /* ========================================
@@ -223,7 +223,7 @@ body,
     background-color: var(--color-surface);
     border-radius: var(--radius-panel);
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 .ide-panel-header {
@@ -253,7 +253,7 @@ body,
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md), var(--border-highlight);
 }
 
 /* ========================================
@@ -563,8 +563,9 @@ body,
     overflow: hidden;
     user-select: none;
     cursor: grab;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md), var(--border-highlight);
     transition: all var(--transition-fast);
+    /* 内部渐变增加立体感 */
     background-blend-mode: overlay;
 }
 
@@ -581,13 +582,14 @@ body,
 }
 
 .timeline-clip:hover {
-    filter: brightness(1.05);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    filter: brightness(1.08);
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: var(--shadow-lg), var(--border-highlight);
 }
 
 .timeline-clip.selected {
-    box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-md);
+    box-shadow: 0 0 0 2px var(--color-accent),
+        var(--shadow-lg);
 }
 
 /* Timeline Clip Color Variants - 更丰富的渐变 */
@@ -715,13 +717,8 @@ body,
     width: 2px;
     background: var(--color-accent);
     transform: translateX(-50%);
-    box-shadow: 0 0 4px var(--color-accent-muted);
+    box-shadow: 0 0 6px var(--color-accent-muted);
     pointer-events: none;
-}
-
-/* 播放时的较淡发光效果 */
-.playhead-cursor.playing .playhead-line {
-    box-shadow: 0 0 8px var(--color-accent-muted);
 }
 
 /* ========================================
